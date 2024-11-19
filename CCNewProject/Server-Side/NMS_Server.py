@@ -19,16 +19,13 @@ class NMS_Server:
         self.tcp_socket.bind((self.host, self.tcp_port))
         self.tcp_socket.listen(5)  # Listen for incoming TCP connections
 
-        # Initialize storage system
+        # Initialize storage system (in-memory)
         self.storage = Storage()
-
-        # Dictionary to store registered agents
-        self.agents = {}
-        self.next_agent_id = 1  
 
     def start(self):
         print("Starting NMS_Server...")
-        print(f"Server active in {self.udp_socket.getsockname()[0]} port {self.udp_port}")
+        print(f"Server active on {self.udp_socket.getsockname()[0]} port {self.udp_port}")
+        
         # Start a thread to handle UDP communication for receiving tasks and metrics
         threading.Thread(target=self.handle_udp).start()
 
@@ -36,16 +33,22 @@ class NMS_Server:
         threading.Thread(target=self.handle_tcp).start()
 
     def load_task_config(self, task_config_path):
-        """ Load the task configuration from the task_config.json file. """
         task_config = TaskConfig.from_json(task_config_path)
         if task_config:
-            print(f"Loaded TaskConfig: {task_config}")
+            print(f"Loaded TaskConfig")
             return task_config
         else:
             print("Failed to load task config.")
             return None
 
     def handle_udp(self):
+
+        # Load the task configuration from a file once at the start
+        task_config = self.load_task_config("../task_config.json")
+        if not task_config:
+            print("Failed to load task configuration, unable to send tasks to agents.")
+            return
+        
         print(f"Listening for incoming UDP packets on port {self.udp_port}")
         while True:
             data, addr = self.udp_socket.recvfrom(1024)
@@ -55,7 +58,7 @@ class NMS_Server:
                 self.register_agent(message, addr)
             elif "metrics" in message:
                 # Process metrics from the agent
-                self.process_metrics(message, addr)
+                self.process_metrics(message)
             elif "task" in message:
                 # Load the task configuration from a file and send it to the agent
                 task_config = self.load_task_config("task_config.json")
@@ -76,34 +79,33 @@ class NMS_Server:
             alert = json.loads(data.decode())
             print(f"Received alert from {addr}: {alert}")
 
-            # Store the alert using the storage system
+            # Store the alert in memory
             self.storage.store_alert(alert)
 
     def register_agent(self, message, addr):
-        agent_id = f"agent_{self.next_agent_id}"  # Assign a new agent ID
-        self.next_agent_id += 1
-        self.agents[agent_id] = addr
+        # Generate a unique agent ID (could be based on IP or incrementally)
+        agent_id = str(len(self.storage.get_agents()) + 1)  # Simple unique ID generation
+
+        # Store agent data in memory
+        self.storage.store_agent(agent_id, addr)
         print(f"Agent {agent_id} registered at {addr}")
 
-        # Store agent data
-        self.storage.store_agent(agent_id, addr)
-
-        # Send registration confirmation with assigned agent_id
+        # Send registration confirmation with the assigned agent ID
         response = {"status": "registered", "agent_id": agent_id}
         self.udp_socket.sendto(json.dumps(response).encode(), addr)
 
-    def process_metrics(self, message, addr):
+    def process_metrics(self, message):
         agent_id = message.get("agent_id")
         metrics = message.get("metrics")
         if agent_id and metrics:
             print(f"Received metrics from {agent_id}: {metrics}")
 
-            # Store metrics data
+            # Store metrics data in memory
             self.storage.store_metrics(agent_id, metrics)
 
     def send_task_to_agent(self, agent_id, task_config):
         """ Send the parsed task to the registered agent. """
-        agent_address = self.agents.get(agent_id)
+        agent_address = self.storage.get_agents().get(agent_id)
         if agent_address:
             task_data = {
                 "task_id": task_config.task_id,
