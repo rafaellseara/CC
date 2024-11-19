@@ -25,7 +25,7 @@ class NMS_Agent:
             "message": "register",
             "agent_id": self.agent_id
         }
-        self.udp_socket.sendto(json.dumps(register_message).encode(), self.server_address)
+        self.udp_socket.sendto(json.dumps(register_message).encode(), (self.server_address, 5005))
         print(f"Sent registration to server at {self.server_address}")
 
         # Wait for confirmation from server
@@ -104,3 +104,11 @@ class NMS_Agent:
         # Start a separate thread for receiving tasks from the server
         task_thread = threading.Thread(target=self.receive_task)
         task_thread.start()
+
+if __name__ == "__main__":
+    server_address = "127.0.1.1"  # Substitua pelo IP do servidor
+    udp_port = 5005
+    tcp_port = 5070
+    agent_id = 1
+    agente = NMS_Agent(server_address, udp_port, tcp_port, agent_id)
+    agente.start()

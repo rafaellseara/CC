@@ -2,7 +2,7 @@ import socket
 import json
 import threading
 from storage import Storage
-from parse_json import TaskConfig 
+from parse_json import TaskConfig  # Import TaskConfig class
 
 class NMS_Server:
     def __init__(self, udp_port, tcp_port, host="localhost"):
@@ -49,7 +49,7 @@ class NMS_Server:
         while True:
             data, addr = self.udp_socket.recvfrom(1024)
             message = json.loads(data.decode())
-
+            print("ola")
             if message.get("message") == "register":
                 # Register the agent
                 self.register_agent(message, addr)
@@ -115,3 +115,10 @@ class NMS_Server:
             print(f"Sent task {task_data} to agent {agent_id}")
         else:
             print(f"Agent {agent_id} not found.")
+
+
+if __name__ == "__main__":
+    udp_port = 5005
+    tcp_port = 5070
+    server = NMS_Server(udp_port, tcp_port, host="localhost")
+    server.start()
