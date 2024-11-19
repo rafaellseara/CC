@@ -2,13 +2,13 @@ import socket
 import json
 import threading
 from storage import Storage
-from parse_json import TaskConfig  # Import TaskConfig class
+from parse_json import TaskConfig  
 
 class NMS_Server:
     def __init__(self, udp_port, tcp_port):
         self.udp_port = udp_port
         self.tcp_port = tcp_port
-        self.host = socket.gethostname() #o programa vai buscar o ip do servidor
+        self.host = socket.gethostname()
 
         # Set up UDP socket for NetTask communication
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -24,6 +24,7 @@ class NMS_Server:
 
         # Dictionary to store registered agents
         self.agents = {}
+        self.next_agent_id = 1  
 
     def start(self):
         print("Starting NMS_Server...")
@@ -79,17 +80,17 @@ class NMS_Server:
             self.storage.store_alert(alert)
 
     def register_agent(self, message, addr):
-        agent_id = message.get("agent_id")
-        if agent_id:
-            self.agents[agent_id] = addr
-            print(f"Agent {agent_id} registered at {addr}")
+        agent_id = f"agent_{self.next_agent_id}"  # Assign a new agent ID
+        self.next_agent_id += 1
+        self.agents[agent_id] = addr
+        print(f"Agent {agent_id} registered at {addr}")
 
-            # Store agent data
-            self.storage.store_agent(agent_id, addr)
+        # Store agent data
+        self.storage.store_agent(agent_id, addr)
 
-            # Send registration confirmation
-            response = {"status": "registered"}
-            self.udp_socket.sendto(json.dumps(response).encode(), addr)
+        # Send registration confirmation with assigned agent_id
+        response = {"status": "registered", "agent_id": agent_id}
+        self.udp_socket.sendto(json.dumps(response).encode(), addr)
 
     def process_metrics(self, message, addr):
         agent_id = message.get("agent_id")

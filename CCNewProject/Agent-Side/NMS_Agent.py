@@ -5,11 +5,11 @@ import threading
 from metrics import MetricCollector 
 
 class NMS_Agent:
-    def __init__(self, server_address, udp_port, tcp_port, agent_id):
+    def __init__(self, server_address, udp_port, tcp_port):
         self.server_address = server_address
         self.udp_port = udp_port
         self.tcp_port = tcp_port
-        self.agent_id = agent_id
+        self.agent_id = None  # Initialize without an agent_id
 
         # Instantiate the MetricCollector
         self.metric_collector = MetricCollector()
@@ -23,18 +23,19 @@ class NMS_Agent:
     def register(self):
         register_message = {
             "message": "register",
-            "agent_id": self.agent_id
         }
-        self.udp_socket.sendto(json.dumps(register_message).encode(), (self.server_address, 5005))
-        print(f"Sent registration to server at {self.server_address}")
+        self.udp_socket.sendto(json.dumps(register_message).encode(), (self.server_address, self.udp_port))
+        print(f"Sent registration request to server at {self.server_address}")
 
-        # Wait for confirmation from server
+        # Wait for response from server with assigned agent_id
         data, server = self.udp_socket.recvfrom(1024)
         response = json.loads(data.decode())
+        
         if response.get("status") == "registered":
-            print(f"Agent {self.agent_id} successfully registered.")
+            self.agent_id = response.get("agent_id")
+            print(f"Agent successfully registered with assigned agent_id: {self.agent_id}")
         else:
-            print(f"Failed to register Agent {self.agent_id}.")
+            print("Failed to register agent.")
 
     def receive_task(self):
         print(f"Listening for tasks from {self.server_address}")
@@ -106,9 +107,8 @@ class NMS_Agent:
         task_thread.start()
 
 if __name__ == "__main__":
-    server_address = "127.0.1.1"  # Substitua pelo IP do servidor
+    server_address = "192.168.56.1" 
     udp_port = 5005
     tcp_port = 5070
-    agent_id = 1
-    agente = NMS_Agent(server_address, udp_port, tcp_port, agent_id)
-    agente.start()
+    agent = NMS_Agent(server_address, udp_port, tcp_port)
+    agent.start()

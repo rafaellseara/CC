@@ -18,9 +18,8 @@ class Storage:
         agent_file = os.path.join(self.storage_dir, 'agents.json')
         agents = self._load_data(agent_file)
         
-        # Garantir que é um dicionário
         if not isinstance(agents, dict):
-            agents = {}  # Inicializa como um dicionário vazio
+            agents = {} 
 
         agents[agent_id] = agent_address
         self._save_data(agent_file, agents)
