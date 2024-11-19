@@ -25,7 +25,7 @@ class NMS_Server:
 
         # Timer and lock for task dispatch
         self.task_timer = None
-        self.task_delay = 30  # seconds
+        self.task_delay = 20  # seconds
         self.timer_lock = threading.Lock()
 
     def start(self):
@@ -47,8 +47,8 @@ class NMS_Server:
 
     def handle_udp(self):
         # Load the task configuration from a file
-        task_config = self.load_task_config("../task_config.json")
-
+        task_config = self.load_task_config("task_config.json")
+        
         print(f"Listening for incoming UDP packets on port {self.udp_port}")
         while True:
             data, addr = self.udp_socket.recvfrom(1024)

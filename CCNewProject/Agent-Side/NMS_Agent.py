@@ -9,7 +9,7 @@ class NMS_Agent:
         self.server_address = server_address
         self.udp_port = udp_port
         self.tcp_port = tcp_port
-        self.agent_id = None  # Initialize without an agent_id
+        self.agent_id = None 
 
         # Instantiate the MetricCollector
         self.metric_collector = MetricCollector()

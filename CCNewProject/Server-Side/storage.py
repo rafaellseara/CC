@@ -6,13 +6,11 @@ class Storage:
         self.metrics = []      # Store metrics as a list of metrics data
 
     def store_alert(self, alert):
-        """Store an alert in memory."""
         self.alerts.append(alert)
         print(f"Alert stored: {alert}")
 
     def store_agent(self, agent_id, agent_address):
-        """Store an agent in memory."""
-        self.agents[agent_id] = agent_address
+        self.agents[agent_id] = {"device_id": agent_id, "address": agent_address}
         print(f"Agent {agent_id} stored with address {agent_address}")
 
     def get_agents(self):
@@ -20,12 +18,15 @@ class Storage:
 
     def get_agent_address_by_device_id(self, device_id):
         for agent_id, agent_data in self.agents.items():
-            if agent_data["device_id"] == device_id:
+            # Check if agent_data is a dictionary with "device_id" as a key
+            if isinstance(agent_data, dict) and agent_data.get("device_id") == device_id:
                 return agent_data["address"]
-        return None 
-
+            # If agent_data is a tuple, use indexing
+            elif isinstance(agent_data, tuple) and agent_data[0] == device_id:
+                return agent_data[1]
+        return None
+    
     def store_metrics(self, agent_id, metrics):
-        """Store metrics in memory."""
         self.metrics.append({
             "agent_id": agent_id,
             "metrics": metrics
@@ -33,13 +34,10 @@ class Storage:
         print(f"Metrics stored for agent {agent_id}: {metrics}")
 
     def get_alerts(self):
-        """Retrieve all stored alerts."""
         return self.alerts
 
     def get_agents(self):
-        """Retrieve all stored agents."""
         return self.agents
 
     def get_metrics(self):
-        """Retrieve all stored metrics."""
         return self.metrics
