@@ -5,14 +5,14 @@ from storage import Storage
 from parse_json import TaskConfig  # Import TaskConfig class
 
 class NMS_Server:
-    def __init__(self, udp_port, tcp_port, host="localhost"):
+    def __init__(self, udp_port, tcp_port):
         self.udp_port = udp_port
         self.tcp_port = tcp_port
-        self.host = host
+        self.host = socket.gethostname() #o programa vai buscar o ip do servidor
 
         # Set up UDP socket for NetTask communication
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.udp_socket.bind((self.host, self.udp_port))
+        self.udp_socket.bind((socket.gethostbyname(self.host), self.udp_port))
 
         # Set up TCP socket for AlertFlow communication
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -27,7 +27,7 @@ class NMS_Server:
 
     def start(self):
         print("Starting NMS_Server...")
-
+        print(f"Server active in {self.udp_socket.getsockname()[0]} port {self.udp_port}")
         # Start a thread to handle UDP communication for receiving tasks and metrics
         threading.Thread(target=self.handle_udp).start()
 
@@ -49,7 +49,6 @@ class NMS_Server:
         while True:
             data, addr = self.udp_socket.recvfrom(1024)
             message = json.loads(data.decode())
-            print("ola")
             if message.get("message") == "register":
                 # Register the agent
                 self.register_agent(message, addr)
@@ -120,5 +119,5 @@ class NMS_Server:
 if __name__ == "__main__":
     udp_port = 5005
     tcp_port = 5070
-    server = NMS_Server(udp_port, tcp_port, host="localhost")
+    server = NMS_Server(udp_port, tcp_port)
     server.start()
