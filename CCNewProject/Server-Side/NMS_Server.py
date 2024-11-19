@@ -1,6 +1,7 @@
 import socket
 import json
 import threading
+import time
 from storage import Storage
 from parse_json import TaskConfig  
 
@@ -42,23 +43,27 @@ class NMS_Server:
             return None
 
     def handle_udp(self):
+        # Load the task configuration from a file
+        task_config = self.load_task_config("../task_config.json")
+
         print(f"Listening for incoming UDP packets on port {self.udp_port}")
+        
         while True:
             data, addr = self.udp_socket.recvfrom(1024)
             message = json.loads(data.decode())
+            
             if message.get("message") == "register":
                 # Register the agent
                 self.register_agent(message, addr)
             elif "metrics" in message:
                 # Process metrics from the agent
                 self.process_metrics(message)
-            elif "task" in message:
-                # Load the task configuration from a file and send it to the agent
-                task_config = self.load_task_config("../task_config.json")
-                if task_config:
-                    # Send task to agent
-                    self.send_task_to_agent(message["agent_id"], task_config)
-
+            
+            # After ensuring agents are registered, send the task to the agents in a separate thread
+            if task_config:
+                time.sleep(30) 
+                threading.Thread(target=self.send_task_to_agents, args=(task_config,)).start()
+                
     def handle_tcp(self):
         print(f"Listening for TCP connections on port {self.tcp_port}")
         while True:
@@ -96,20 +101,25 @@ class NMS_Server:
             # Store metrics data in memory
             self.storage.store_metrics(agent_id, metrics)
 
-    def send_task_to_agent(self, agent_id, task_config):
-        """ Send the parsed task to the registered agent. """
-        agent_address = self.storage.get_agents().get(agent_id)
-        if agent_address:
-            task_data = {
-                "task_id": task_config.task_id,
-                "frequency": task_config.frequency,
-                "devices": [device.device_id for device in task_config.devices]
-            }
-            # Send the task data to the agent (UDP)
-            self.udp_socket.sendto(json.dumps(task_data).encode(), agent_address)
-            print(f"Sent task {task_data} to agent {agent_id}")
-        else:
-            print(f"Agent {agent_id} not found.")
+    def send_task_to_agents(self, task_config):
+        # Loop through all devices in the task config and send task to each agent
+        for device in task_config.devices:
+            agent_address = self.storage.get_agent_address_by_device_id(device.device_id)
+            
+            if agent_address:
+                task_data = {
+                    "task_id": task_config.task_id,
+                    "frequency": task_config.frequency,
+                    "devices": [device.device_id for device in task_config.devices],
+                    "metrics": device.metrics  # Assuming each device has its own metrics
+                }
+                
+                # Send the task data to the agent (UDP)
+                self.udp_socket.sendto(json.dumps(task_data).encode(), agent_address)
+                print(f"Sent task {task_data} to agent {device.device_id}")
+            else:
+                print(f"Agent {device.device_id} not found.")
+
 
 
 if __name__ == "__main__":

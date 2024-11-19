@@ -15,6 +15,15 @@ class Storage:
         self.agents[agent_id] = agent_address
         print(f"Agent {agent_id} stored with address {agent_address}")
 
+    def get_agents(self):
+        return self.agents
+
+    def get_agent_address_by_device_id(self, device_id):
+        for agent_id, agent_data in self.agents.items():
+            if agent_data["device_id"] == device_id:
+                return agent_data["address"]
+        return None 
+
     def store_metrics(self, agent_id, metrics):
         """Store metrics in memory."""
         self.metrics.append({
