@@ -25,7 +25,7 @@ class NMS_Server:
     def start(self):
         print("Starting NMS_Server...")
         print(f"Server active on {self.udp_socket.getsockname()[0]} port {self.udp_port}")
-        
+
         # Start a thread to handle UDP communication for receiving tasks and metrics
         threading.Thread(target=self.handle_udp).start()
 
@@ -42,13 +42,6 @@ class NMS_Server:
             return None
 
     def handle_udp(self):
-
-        # Load the task configuration from a file once at the start
-        task_config = self.load_task_config("../task_config.json")
-        if not task_config:
-            print("Failed to load task configuration, unable to send tasks to agents.")
-            return
-        
         print(f"Listening for incoming UDP packets on port {self.udp_port}")
         while True:
             data, addr = self.udp_socket.recvfrom(1024)
@@ -61,7 +54,7 @@ class NMS_Server:
                 self.process_metrics(message)
             elif "task" in message:
                 # Load the task configuration from a file and send it to the agent
-                task_config = self.load_task_config("task_config.json")
+                task_config = self.load_task_config("../task_config.json")
                 if task_config:
                     # Send task to agent
                     self.send_task_to_agent(message["agent_id"], task_config)
