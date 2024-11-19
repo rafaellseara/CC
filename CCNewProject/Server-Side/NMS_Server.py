@@ -3,7 +3,7 @@ import json
 import threading
 import time
 from storage import Storage
-from parse_json import TaskConfig  
+from parse_json import TaskConfig
 
 class NMS_Server:
     def __init__(self, udp_port, tcp_port):
@@ -18,19 +18,22 @@ class NMS_Server:
         # Set up TCP socket for AlertFlow communication
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.tcp_socket.bind((self.host, self.tcp_port))
-        self.tcp_socket.listen(5)  # Listen for incoming TCP connections
+        self.tcp_socket.listen(5)
 
         # Initialize storage system (in-memory)
         self.storage = Storage()
+
+        # Timer and lock for task dispatch
+        self.task_timer = None
+        self.task_delay = 30  # seconds
+        self.timer_lock = threading.Lock()
 
     def start(self):
         print("Starting NMS_Server...")
         print(f"Server active on {self.udp_socket.getsockname()[0]} port {self.udp_port}")
 
-        # Start a thread to handle UDP communication for receiving tasks and metrics
+        # Start threads to handle UDP and TCP communication
         threading.Thread(target=self.handle_udp).start()
-
-        # Start a thread to handle TCP communication for receiving alerts
         threading.Thread(target=self.handle_tcp).start()
 
     def load_task_config(self, task_config_path):
@@ -47,7 +50,6 @@ class NMS_Server:
         task_config = self.load_task_config("../task_config.json")
 
         print(f"Listening for incoming UDP packets on port {self.udp_port}")
-        
         while True:
             data, addr = self.udp_socket.recvfrom(1024)
             message = json.loads(data.decode())
@@ -55,15 +57,18 @@ class NMS_Server:
             if message.get("message") == "register":
                 # Register the agent
                 self.register_agent(message, addr)
+                
+                # Reset the task timer to wait 30 seconds before sending tasks
+                with self.timer_lock:
+                    if self.task_timer:
+                        self.task_timer.cancel()  # Cancel any existing timer
+                    self.task_timer = threading.Timer(self.task_delay, self.send_task_to_agents, [task_config])
+                    self.task_timer.start()
+
             elif "metrics" in message:
                 # Process metrics from the agent
                 self.process_metrics(message)
-            
-            # After ensuring agents are registered, send the task to the agents in a separate thread
-            if task_config:
-                time.sleep(30) 
-                threading.Thread(target=self.send_task_to_agents, args=(task_config,)).start()
-                
+
     def handle_tcp(self):
         print(f"Listening for TCP connections on port {self.tcp_port}")
         while True:
@@ -119,7 +124,6 @@ class NMS_Server:
                 print(f"Sent task {task_data} to agent {device.device_id}")
             else:
                 print(f"Agent {device.device_id} not found.")
-
 
 
 if __name__ == "__main__":
