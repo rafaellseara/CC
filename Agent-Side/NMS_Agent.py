@@ -50,7 +50,7 @@ class NMS_Agent:
     def collect_metrics(self, task):
         while True:
             # Use the MetricCollector to gather all metrics
-            metrics = self.metric_collector.collect_all_metrics()
+            metrics = self.metric_collector.collect_all_metrics(task)
             print(f"Collected metrics: {metrics}")
 
             # Send metrics back to the server
@@ -107,7 +107,7 @@ class NMS_Agent:
         task_thread.start()
 
 if __name__ == "__main__":
-    server_address = "127.0.1.1" 
+    server_address = "1.1.1.1" 
     udp_port = 5005
     tcp_port = 5070
     agent = NMS_Agent(server_address, udp_port, tcp_port)

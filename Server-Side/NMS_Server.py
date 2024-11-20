@@ -58,7 +58,7 @@ class NMS_Server:
                 # Register the agent
                 self.register_agent(message, addr)
                 
-                # Reset the task timer to wait 30 seconds before sending tasks
+                # Reset the task timer to wait 20 seconds before sending tasks
                 with self.timer_lock:
                     if self.task_timer:
                         self.task_timer.cancel()  # Cancel any existing timer
