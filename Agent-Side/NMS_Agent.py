@@ -64,7 +64,7 @@ class NMS_Agent:
 
     def send_metrics(self, metrics):
         metrics_message = json.dumps(metrics)
-        self.udp_socket.sendto(metrics_message.encode(), self.server_address)
+        self.udp_socket.sendto(metrics_message.encode(), (self.server_address, self.udp_port))
         print(f"Sent metrics to server: {metrics}")
 
     def send_alert(self, alert_message):
