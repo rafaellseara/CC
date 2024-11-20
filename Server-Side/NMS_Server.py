@@ -112,20 +112,28 @@ class NMS_Server:
             agent_address = self.storage.get_agent_address_by_device_id(device.device_id)
             
             if agent_address:
+                # Prepare task data including device_metrics, link_metrics, and alertflow_conditions
                 task_data = {
                     "task_id": task_config.task_id,
                     "frequency": task_config.frequency,
-                    "devices": [device.device_id for device in task_config.devices],
-                     "device_metrics": {
-                    "cpu_usage": device.device_metrics.cpu_usage,
-                    "ram_usage": device.device_metrics.ram_usage,
-                    "interface_stats": device.device_metrics.interface_stats,
+                    "device_id": device.device_id,
+                    "device_metrics": {
+                        "cpu_usage": device.device_metrics.cpu_usage,
+                        "ram_usage": device.device_metrics.ram_usage,
+                        "interface_stats": device.device_metrics.interface_stats,
                     },
                     "link_metrics": {
                         "bandwidth": device.link_metrics.bandwidth,
                         "jitter": device.link_metrics.jitter,
                         "packet_loss": device.link_metrics.packet_loss,
                         "latency": device.link_metrics.latency,
+                    },
+                    "alertflow_conditions": {
+                        "cpu_usage": device.alertflow_conditions.cpu_usage,
+                        "ram_usage": device.alertflow_conditions.ram_usage,
+                        "interface_stats": device.alertflow_conditions.interface_stats,
+                        "packet_loss": device.alertflow_conditions.packet_loss,
+                        "jitter": device.alertflow_conditions.jitter,
                     }
                 }
                 
@@ -133,7 +141,7 @@ class NMS_Server:
                 self.udp_socket.sendto(json.dumps(task_data).encode(), agent_address)
                 print(f"Sent task {task_data} to agent {device.device_id}")
             else:
-                print(f"Agent {device.device_id} not found.")
+                print(f"Agent {device.device_id} not found.")
 
 
 if __name__ == "__main__":

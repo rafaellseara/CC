@@ -12,6 +12,7 @@
       "link_metrics": {
         "bandwidth": {
           "enabled": true,
+          "tool": "iperf",
           "role": "client",
           "server_address": "192.168.1.1",
           "duration": 10,
@@ -20,6 +21,7 @@
         },
         "jitter": {
           "enabled": true,
+          "tool": "iperf",
           "role": "client",
           "server_address": "192.168.1.1",
           "duration": 10,
@@ -28,6 +30,7 @@
         },
         "packet_loss": {
           "enabled": true,
+          "tool": "iperf",
           "role": "client",
           "server_address": "192.168.1.1",
           "duration": 10,
@@ -36,6 +39,7 @@
         },
         "latency": {
           "enabled": true,
+          "tool": "ping",
           "destination": "192.168.1.2",
           "packet_count": 5,
           "frequency": 20
@@ -59,6 +63,7 @@
       "link_metrics": {
         "bandwidth": {
           "enabled": true,
+          "tool": "iperf",
           "role": "server",
           "server_address": "",
           "duration": 10,
@@ -66,17 +71,21 @@
           "frequency": 30
         },
         "jitter": {
-          "enabled": false
+          "enabled": false,
+          "tool": "iperf"
         },
         "packet_loss": {
           "enabled": true,
+          "tool": "iperf",
           "role": "server",
+          "server_address": "",
           "duration": 10,
           "transport_type": "UDP",
           "frequency": 30
         },
         "latency": {
           "enabled": true,
+          "tool": "ping",
           "destination": "192.168.1.3",
           "packet_count": 4,
           "frequency": 20
