@@ -116,7 +116,17 @@ class NMS_Server:
                     "task_id": task_config.task_id,
                     "frequency": task_config.frequency,
                     "devices": [device.device_id for device in task_config.devices],
-                    "metrics": device.metrics  # Assuming each device has its own metrics
+                     "device_metrics": {
+                    "cpu_usage": device.device_metrics.cpu_usage,
+                    "ram_usage": device.device_metrics.ram_usage,
+                    "interface_stats": device.device_metrics.interface_stats,
+                    },
+                    "link_metrics": {
+                        "bandwidth": device.link_metrics.bandwidth,
+                        "jitter": device.link_metrics.jitter,
+                        "packet_loss": device.link_metrics.packet_loss,
+                        "latency": device.link_metrics.latency,
+                    }
                 }
                 
                 # Send the task data to the agent (UDP)
