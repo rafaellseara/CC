@@ -5,6 +5,7 @@ import time
 from storage import Storage
 from parse_json import TaskConfig
 
+
 class NMS_Server:
     def __init__(self, udp_port, tcp_port):
         self.udp_port = udp_port
@@ -37,63 +38,70 @@ class NMS_Server:
         threading.Thread(target=self.handle_tcp).start()
 
     def load_task_config(self, task_config_path):
-        task_config = TaskConfig.from_json(task_config_path)
-        if task_config:
-            print(f"Loaded TaskConfig")
-            return task_config
-        else:
-            print("Failed to load task config.")
+        try:
+            task_config = TaskConfig.from_json(task_config_path)
+            if task_config:
+                print(f"Loaded TaskConfig")
+                return task_config
+            else:
+                print("Failed to load task config.")
+                return None
+        except Exception as e:
+            print(f"Error loading task config: {e}")
             return None
 
     def handle_udp(self):
-        # Load the task configuration from a file
         task_config = self.load_task_config("task_config.json")
-        
         print(f"Listening for incoming UDP packets on port {self.udp_port}")
         while True:
-            data, addr = self.udp_socket.recvfrom(1024)
-            message = json.loads(data.decode())
-            
-            if message.get("message") == "register":
-                # Register the agent
-                self.register_agent(message, addr)
-                
-                # Reset the task timer to wait 20 seconds before sending tasks
-                with self.timer_lock:
-                    if self.task_timer:
-                        self.task_timer.cancel()  # Cancel any existing timer
-                    self.task_timer = threading.Timer(self.task_delay, self.send_task_to_agents, [task_config])
-                    self.task_timer.start()
+            try:
+                data, addr = self.udp_socket.recvfrom(1024)
+                message = json.loads(data.decode())
+                self.process_udp_message(message, addr, task_config)
+            except Exception as e:
+                print(f"Error in UDP handling: {e}")
 
-            elif "metrics" in message:
-                # Process metrics from the agent
-                self.process_metrics(message)
+    def process_udp_message(self, message, addr, task_config):
+        if message.get("message") == "register":
+            self.register_agent(message, addr)
+            with self.timer_lock:
+                if self.task_timer:
+                    self.task_timer.cancel()
+                self.task_timer = threading.Timer(self.task_delay, self.send_task_to_agents, [task_config])
+                self.task_timer.start()
+        elif message.get("message") == "task_ack":
+            self.process_task_ack(message)
+        elif "metrics" in message:
+            self.process_metrics(message)
+
+    def process_task_ack(self, message):
+        task_id = message.get("task_id")
+        agent_id = message.get("agent_id")
+        print(f"Received ACK for task {task_id} from agent {agent_id}")
 
     def handle_tcp(self):
         print(f"Listening for TCP connections on port {self.tcp_port}")
         while True:
-            conn, addr = self.tcp_socket.accept()
-            print(f"Accepted connection from {addr}")
-            threading.Thread(target=self.handle_alert, args=(conn, addr)).start()
+            try:
+                conn, addr = self.tcp_socket.accept()
+                threading.Thread(target=self.handle_alert, args=(conn, addr)).start()
+            except Exception as e:
+                print(f"Error in TCP handling: {e}")
 
     def handle_alert(self, conn, addr):
         with conn:
-            data = conn.recv(1024)  # Receive alert data
-            alert = json.loads(data.decode())
-            print(f"Received alert from {addr}: {alert}")
-
-            # Store the alert in memory
-            self.storage.store_alert(alert)
+            try:
+                data = conn.recv(1024)
+                alert = json.loads(data.decode())
+                print(f"Received alert from {addr}: {alert}")
+                self.storage.store_alert(alert)
+            except Exception as e:
+                print(f"Error handling alert from {addr}: {e}")
 
     def register_agent(self, message, addr):
-        # Generate a unique agent ID (could be based on IP or incrementally)
-        agent_id = str(len(self.storage.get_agents()) + 1)  # Simple unique ID generation
-
-        # Store agent data in memory
+        agent_id = str(len(self.storage.get_agents()) + 1)
         self.storage.store_agent(agent_id, addr)
         print(f"Agent {agent_id} registered at {addr}")
-
-        # Send registration confirmation with the assigned agent ID
         response = {"status": "registered", "agent_id": agent_id}
         self.udp_socket.sendto(json.dumps(response).encode(), addr)
 
@@ -102,46 +110,24 @@ class NMS_Server:
         metrics = message.get("metrics")
         if agent_id and metrics:
             print(f"Received metrics from {agent_id}: {metrics}")
-
-            # Store metrics data in memory
             self.storage.store_metrics(agent_id, metrics)
 
     def send_task_to_agents(self, task_config):
-        # Loop through all devices in the task config and send task to each agent
         for device in task_config.devices:
             agent_address = self.storage.get_agent_address_by_device_id(device.device_id)
-            
             if agent_address:
-                # Prepare task data including device_metrics, link_metrics, and alertflow_conditions
                 task_data = {
                     "task_id": task_config.task_id,
                     "frequency": task_config.frequency,
                     "device_id": device.device_id,
-                    "device_metrics": {
-                        "cpu_usage": device.device_metrics.cpu_usage,
-                        "ram_usage": device.device_metrics.ram_usage,
-                        "interface_stats": device.device_metrics.interface_stats,
-                    },
-                    "link_metrics": {
-                        "bandwidth": device.link_metrics.bandwidth,
-                        "jitter": device.link_metrics.jitter,
-                        "packet_loss": device.link_metrics.packet_loss,
-                        "latency": device.link_metrics.latency,
-                    },
-                    "alertflow_conditions": {
-                        "cpu_usage": device.alertflow_conditions.cpu_usage,
-                        "ram_usage": device.alertflow_conditions.ram_usage,
-                        "interface_stats": device.alertflow_conditions.interface_stats,
-                        "packet_loss": device.alertflow_conditions.packet_loss,
-                        "jitter": device.alertflow_conditions.jitter,
-                    }
+                    "device_metrics": vars(device.device_metrics),
+                    "link_metrics": vars(device.link_metrics),
+                    "alertflow_conditions": vars(device.alertflow_conditions)
                 }
-                
-                # Send the task data to the agent (UDP)
                 self.udp_socket.sendto(json.dumps(task_data).encode(), agent_address)
-                print(f"Sent task {task_data} to agent {device.device_id}")
+                print(f"Sent task to agent {device.device_id}")
             else:
-                print(f"Agent {device.device_id} not found.")
+                print(f"Agent {device.device_id} not found.")
 
 
 if __name__ == "__main__":

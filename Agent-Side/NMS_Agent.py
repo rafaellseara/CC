@@ -44,28 +44,58 @@ class NMS_Agent:
             data, server = self.udp_socket.recvfrom(1024)
             task = json.loads(data.decode())
             print(f"Received task: {task}")
-            # Here we can start collecting the metrics based on the task
+            
+            # Send acknowledgment to the server
+            self.send_task_ack(task.get("task_id"))
+            
+            # Start collecting metrics based on the task
             self.collect_metrics(task)
+
+    def send_task_ack(self, task_id):
+        if not task_id:
+            print("No task ID found to send ACK.")
+            return
+        
+        ack_message = {
+            "message": "task_ack",
+            "task_id": task_id,
+            "agent_id": self.agent_id
+        }
+        self.udp_socket.sendto(json.dumps(ack_message).encode(), (self.server_address, self.udp_port))
+        print(f"Sent ACK for task_id {task_id} to server.")
 
     def collect_metrics(self, task):
         while True:
-            # Use the MetricCollector to gather all metrics
-            metrics = self.metric_collector.collect_all_metrics(task)
-            print(f"Collected metrics: {metrics}")
+            try:
+                print(f"[DEBUG] Collecting metrics for task ID: {task.get('task_id')}")
 
-            # Send metrics back to the server
-            self.send_metrics(metrics)
+                # Collect all metrics, including CPU and RAM usage
+                metrics = self.metric_collector.collect_all_metrics(task)
+                print(f"[DEBUG] Metrics collected: {metrics}")
 
-            # Check for critical conditions and send alerts if needed
-            self.check_alerts(metrics, task)
+                # Send metrics to the server
+                self.send_metrics(metrics)
 
-            # Sleep for the frequency defined in the task (if available)
-            time.sleep(task.get("frequency", 30))
+                # Check for alert conditions
+                self.check_alerts(metrics, task)
+
+                # Sleep for the frequency defined in the task
+                sleep_duration = task.get("frequency", 30)
+                print(f"[DEBUG] Sleeping for {sleep_duration} seconds before next collection.")
+                time.sleep(sleep_duration)
+            except Exception as e:
+                print(f"[ERROR] Error in collect_metrics: {e}")
+
 
     def send_metrics(self, metrics):
-        metrics_message = json.dumps(metrics)
-        self.udp_socket.sendto(metrics_message.encode(), (self.server_address, self.udp_port))
-        print(f"Sent metrics to server: {metrics}")
+        try:
+            print(f"[DEBUG] Sending metrics to server: {metrics}")
+            metrics_message = json.dumps(metrics)
+            self.udp_socket.sendto(metrics_message.encode(), (self.server_address, self.udp_port))
+            print(f"[DEBUG] Metrics sent successfully.")
+        except Exception as e:
+            print(f"[ERROR] Failed to send metrics: {e}")
+
 
     def send_alert(self, alert_message):
         try:
@@ -107,7 +137,7 @@ class NMS_Agent:
         task_thread.start()
 
 if __name__ == "__main__":
-    server_address = "1.1.1.1" 
+    server_address = "127.0.1.1" 
     udp_port = 5005
     tcp_port = 5070
     agent = NMS_Agent(server_address, udp_port, tcp_port)

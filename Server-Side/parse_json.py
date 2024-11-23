@@ -7,9 +7,7 @@ class DeviceMetrics:
         self.interface_stats = interface_stats
 
     def __repr__(self):
-        return (f"DeviceMetrics(cpu_usage={self.cpu_usage}, "
-                f"ram_usage={self.ram_usage}, interface_stats={self.interface_stats})")
-
+        return f"DeviceMetrics(cpu_usage={self.cpu_usage}, ram_usage={self.ram_usage}, interface_stats={self.interface_stats})"
 
 class LinkMetrics:
     def __init__(self, bandwidth, jitter, packet_loss, latency):
@@ -19,9 +17,7 @@ class LinkMetrics:
         self.latency = latency
 
     def __repr__(self):
-        return (f"LinkMetrics(bandwidth={self.bandwidth}, jitter={self.jitter}, "
-                f"packet_loss={self.packet_loss}, latency={self.latency})")
-
+        return f"LinkMetrics(bandwidth={self.bandwidth}, jitter={self.jitter}, packet_loss={self.packet_loss}, latency={self.latency})"
 
 class AlertFlowConditions:
     def __init__(self, cpu_usage, ram_usage, interface_stats, packet_loss, jitter):
@@ -32,9 +28,7 @@ class AlertFlowConditions:
         self.jitter = jitter
 
     def __repr__(self):
-        return (f"AlertFlowConditions(cpu_usage={self.cpu_usage}, ram_usage={self.ram_usage}, "
-                f"interface_stats={self.interface_stats}, packet_loss={self.packet_loss}, jitter={self.jitter})")
-
+        return f"AlertFlowConditions(cpu_usage={self.cpu_usage}, ram_usage={self.ram_usage}, interface_stats={self.interface_stats}, packet_loss={self.packet_loss}, jitter={self.jitter})"
 
 class Device:
     def __init__(self, device_id, device_metrics, link_metrics, alertflow_conditions):
@@ -44,9 +38,7 @@ class Device:
         self.alertflow_conditions = alertflow_conditions
 
     def __repr__(self):
-        return (f"Device(device_id={self.device_id}, device_metrics={self.device_metrics}, "
-                f"link_metrics={self.link_metrics}, alertflow_conditions={self.alertflow_conditions})")
-
+        return f"Device(device_id={self.device_id}, device_metrics={self.device_metrics}, link_metrics={self.link_metrics}, alertflow_conditions={self.alertflow_conditions})"
 
 class TaskConfig:
     def __init__(self, task_id, frequency, devices):
@@ -60,16 +52,13 @@ class TaskConfig:
             with open(file_path, 'r') as file:
                 data = json.load(file)
 
-            # Parse general task information
             task_id = data["task_id"]
             frequency = data["frequency"]
             devices = []
 
-            # Parse devices
             for device_data in data["devices"]:
                 device_id = device_data["device_id"]
 
-                # Parse device metrics
                 dm = device_data["device_metrics"]
                 device_metrics = DeviceMetrics(
                     cpu_usage=dm.get("cpu_usage"),
@@ -77,7 +66,6 @@ class TaskConfig:
                     interface_stats=dm.get("interface_stats", [])
                 )
 
-                # Parse link metrics
                 lm = device_data["link_metrics"]
                 link_metrics = LinkMetrics(
                     bandwidth=lm.get("bandwidth"),
@@ -86,7 +74,6 @@ class TaskConfig:
                     latency=lm.get("latency")
                 )
 
-                # Parse alertflow conditions
                 afc = device_data["alertflow_conditions"]
                 alertflow_conditions = AlertFlowConditions(
                     cpu_usage=afc.get("cpu_usage"),
@@ -96,7 +83,6 @@ class TaskConfig:
                     jitter=afc.get("jitter")
                 )
 
-                # Create Device instance and add to list
                 device = Device(
                     device_id=device_id,
                     device_metrics=device_metrics,
@@ -105,16 +91,11 @@ class TaskConfig:
                 )
                 devices.append(device)
 
-            # Return the full TaskConfig instance
             return cls(task_id=task_id, frequency=frequency, devices=devices)
 
-        except FileNotFoundError:
-            print(f"Error: The file {file_path} was not found.")
-            return None
-        except json.JSONDecodeError:
-            print("Error: The JSON file is not properly formatted.")
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"Error reading or parsing JSON file: {e}")
             return None
 
     def __repr__(self):
-        return (f"TaskConfig(task_id={self.task_id}, frequency={self.frequency}, "
-                f"devices={self.devices})")
+        return f"TaskConfig(task_id={self.task_id}, frequency={self.frequency}, devices={self.devices})"
