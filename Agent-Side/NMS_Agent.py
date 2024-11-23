@@ -89,13 +89,31 @@ class NMS_Agent:
 
     def send_metrics(self, metrics):
         try:
-            print(f"[DEBUG] Sending metrics to server: {metrics}")
-            metrics_message = json.dumps(metrics)
-            self.udp_socket.sendto(metrics_message.encode(), (self.server_address, self.udp_port))
-            print(f"[DEBUG] Metrics sent successfully.")
+            metrics_message = {
+                "agent_id": self.agent_id,
+                "metrics": metrics
+            }
+            self.udp_socket.sendto(json.dumps(metrics_message).encode(), (self.server_address, self.udp_port))
+            print(f"[DEBUG] Metrics sent successfully: {metrics_message}")
+
+            # Wait for ACK from server
+            self.wait_for_ack()
         except Exception as e:
             print(f"[ERROR] Failed to send metrics: {e}")
 
+    def wait_for_ack(self):
+        try:
+            self.udp_socket.settimeout(5)  # Set a timeout for ACK reception
+            ack_data, _ = self.udp_socket.recvfrom(1024)
+            ack_message = json.loads(ack_data.decode())
+            if ack_message.get("message") == "metrics_ack" and ack_message.get("agent_id") == self.agent_id:
+                print(f"[DEBUG] Received ACK from server for metrics: {ack_message}")
+            else:
+                print(f"[WARNING] Received unexpected ACK: {ack_message}")
+        except socket.timeout:
+            print("[ERROR] No ACK received from server within timeout period.")
+        finally:
+            self.udp_socket.settimeout(None)  # Reset timeout to default
 
     def send_alert(self, alert_message):
         try:

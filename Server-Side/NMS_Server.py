@@ -72,7 +72,7 @@ class NMS_Server:
         elif message.get("message") == "task_ack":
             self.process_task_ack(message)
         elif "metrics" in message:
-            self.process_metrics(message)
+            self.process_metrics(message,addr)
 
     def process_task_ack(self, message):
         task_id = message.get("task_id")
@@ -105,12 +105,20 @@ class NMS_Server:
         response = {"status": "registered", "agent_id": agent_id}
         self.udp_socket.sendto(json.dumps(response).encode(), addr)
 
-    def process_metrics(self, message):
+    def process_metrics(self, message, addr):
         agent_id = message.get("agent_id")
         metrics = message.get("metrics")
         if agent_id and metrics:
-            print(f"Received metrics from {agent_id}: {metrics}")
+            print(f"[INFO] Received metrics from {agent_id}: {metrics}")
             self.storage.store_metrics(agent_id, metrics)
+
+            # Send ACK back to the agent
+            ack_message = {"message": "metrics_ack", "agent_id": agent_id, "status": "received"}
+            self.udp_socket.sendto(json.dumps(ack_message).encode(), addr)
+            print(f"[DEBUG] Sent ACK for metrics to agent {agent_id}")
+        else:
+            print(f"[WARNING] Invalid metrics message: {message}")
+
 
     def send_task_to_agents(self, task_config):
         for device in task_config.devices:
