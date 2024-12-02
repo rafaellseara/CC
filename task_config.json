@@ -14,7 +14,7 @@
           "enabled": true,
           "tool": "iperf",
           "role": "server",
-          "server_address": "127.0.1.1",
+          "server_address": "127.0.0.1",
           "duration": 10,
           "transport_type": "TCP",
           "frequency": 30
@@ -22,7 +22,7 @@
         "latency": {
           "enabled": true,
           "tool": "ping",
-          "destination": "127.0.1.1",
+          "destination": "127.0.0.1",
           "packet_count": 5,
           "frequency": 20
         }
@@ -44,7 +44,7 @@
           "enabled": true,
           "tool": "iperf",
           "role": "client",
-          "server_address": "127.0.1.1",
+          "server_address": "127.0.0.1",
           "duration": 10,
           "transport_type": "TCP",
           "frequency": 30
@@ -52,7 +52,7 @@
         "latency": {
           "enabled": true,
           "tool": "ping",
-          "destination": "127.0.1.1",
+          "destination": "127.0.0.1",
           "packet_count": 4,
           "frequency": 20
         }

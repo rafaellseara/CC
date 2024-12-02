@@ -44,12 +44,25 @@ class MetricCollector:
     def parse_iperf_output(self, output):
         try:
             lines = output.splitlines()
+            parsed_data = {"bandwidth": None, "jitter": None, "packet_loss": None}
+
             for line in lines:
-                if "bits/sec" in line:
-                    bandwidth = line.split()[-2] + " " + line.split()[-1]
-                    print(f"[DEBUG] Parsed Bandwidth: {bandwidth}")
-                    return {"bandwidth": bandwidth}
-            print("[DEBUG] No Bandwidth data found in iperf output.")
+                # Parse bandwidth
+                if "bits/sec" in line and not parsed_data["bandwidth"]:
+                    parts = line.split()
+                    parsed_data["bandwidth"] = parts[-2] + " " + parts[-1]
+                    print(f"[DEBUG] Parsed Bandwidth: {parsed_data['bandwidth']}")
+                
+                # Parse jitter and packet loss for UDP transport
+                if "ms" in line and "/" in line:
+                    parts = line.split()
+                    parsed_data["jitter"] = parts[-4] + " " + parts[-3]  # Include the jitter value with unit (e.g., "0.019 ms")
+                    parsed_data["packet_loss"] = parts[-1]  # Packet loss (e.g., "(0.11%)")
+                    print(f"[DEBUG] Parsed Jitter: {parsed_data['jitter']}, Packet Loss: {parsed_data['packet_loss']}")
+
+            if any(value for value in parsed_data.values()):
+                return parsed_data
+            print("[DEBUG] No relevant data found in iperf output.")
             return None
         except Exception as e:
             print(f"[ERROR] Error parsing iperf output: {e}")
@@ -77,11 +90,11 @@ class MetricCollector:
             if not hasattr(self, '_server_process') or self._server_process.poll() is not None:
                 # Start the server process if not already running
                 command = [tool_config["tool"], "-s", "-P 1"]
+                if tool_config["transport_type"] == "UDP":
+                    command.append("-u")
                 print("[DEBUG] Starting iperf in server mode.")
                 self._server_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 print("[DEBUG] Iperf server started successfully.")
-                if tool_config["transport_type"] == "UDP":
-                    command.append("-u")
             return {"status": "server_running"}
         elif tool_config["role"] == "client":
             command = [

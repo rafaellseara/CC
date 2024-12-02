@@ -8,7 +8,7 @@ from storage import Storage
 
 class NMS_Server:
     def __init__(self, udp_port, tcp_port):
-        self.host = socket.gethostname()
+        self.host = "127.0.0.1"
         self.net_task = NetTask(self.host, udp_port)
         self.alert_flow = AlertFlow(self.host, tcp_port)
         self.storage = Storage()
