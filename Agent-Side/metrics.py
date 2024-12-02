@@ -76,16 +76,18 @@ class MetricCollector:
         if tool_config["role"] == "server":
             if not hasattr(self, '_server_process') or self._server_process.poll() is not None:
                 # Start the server process if not already running
-                command = [tool_config["tool"], "-s"]
+                command = [tool_config["tool"], "-s", "-P 1"]
                 print("[DEBUG] Starting iperf in server mode.")
                 self._server_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 print("[DEBUG] Iperf server started successfully.")
+                if tool_config["transport_type"] == "UDP":
+                    command.append("-u")
             return {"status": "server_running"}
         elif tool_config["role"] == "client":
             command = [
                 tool_config["tool"],
                 "-c", tool_config["server_address"],
-                "-t", str(tool_config.get("duration", 10)),
+                "-t", str(tool_config.get("duration", 10)), 
             ]
             if tool_config["transport_type"] == "UDP":
                 command.append("-u")
@@ -125,6 +127,5 @@ class MetricCollector:
                 metrics["link_metrics"]["bandwidth"] = self.get_bandwidth(config)
             elif metric_name == "latency":
                 metrics["link_metrics"]["latency"] = self.get_latency(config)
-
-        print(f"[DEBUG] Collected Metrics: {metrics}")
+                
         return metrics

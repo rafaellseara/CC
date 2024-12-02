@@ -20,49 +20,68 @@ class NMS_Agent:
         # TCP socket for AlertFlow
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    def register(self):
+    def register(self, retries=3, timeout=5):
+        """
+        Registers the agent with the server. Retransmits the registration message if no response is received.
+        """
         register_message = {
             "message": "register",
         }
-        self.udp_socket.sendto(json.dumps(register_message).encode(), (self.server_address, self.udp_port))
-        print(f"Sent registration request to server at {self.server_address}")
+        for attempt in range(retries):
+            try:
+                # Send registration message
+                self.udp_socket.sendto(json.dumps(register_message).encode(), (self.server_address, self.udp_port))
+                print(f"[INFO] Sent registration request to server at {self.server_address} (Attempt {attempt + 1}/{retries})")
 
-        # Wait for response from server with assigned agent_id
-        data, server = self.udp_socket.recvfrom(1024)
-        response = json.loads(data.decode())
-        
-        if response.get("status") == "registered":
-            self.agent_id = response.get("agent_id")
-            print(f"Agent successfully registered with assigned agent_id: {self.agent_id}")
-        else:
-            print("Failed to register agent.")
+                # Wait for response from server
+                self.udp_socket.settimeout(timeout)
+                data, server = self.udp_socket.recvfrom(1024)
+                response = json.loads(data.decode())
+
+                # Process server response
+                if response.get("status") == "registered":
+                    self.agent_id = response.get("agent_id")
+                    print(f"[INFO] Agent successfully registered with assigned agent_id: {self.agent_id}")
+                    return True  # Registration successful
+                else:
+                    print("[WARNING] Received unexpected response during registration: ", response)
+            except socket.timeout:
+                print(f"[WARNING] No response from server. Retrying registration ({attempt + 1}/{retries})...")
+            except Exception as e:
+                print(f"[ERROR] Error during registration: {e}")
+        print("[ERROR] Failed to register agent after multiple attempts.")
+        return False  # Registration failed
 
     def receive_task(self):
-        print(f"Listening for tasks from {self.server_address}")
-        while True:
-            # Listen for task instructions (e.g., metrics to collect)
-            data, server = self.udp_socket.recvfrom(1024)
-            task = json.loads(data.decode())
-            print(f"Received task: {task}")
-            
-            # Send acknowledgment to the server
-            self.send_task_ack(task.get("task_id"))
-            
-            # Start collecting metrics based on the task
-            self.collect_metrics(task)
+        """
+        Listens for tasks from the server and processes them when received.
+        Runs indefinitely without a timeout.
+        """
+        # Ensure no timeout is set for the socket
+        self.udp_socket.settimeout(None)
 
-    def send_task_ack(self, task_id):
-        if not task_id:
-            print("No task ID found to send ACK.")
-            return
-        
+        while True:
+            try:
+                print(f"[INFO] Listening for tasks from {self.server_address}")
+                data, server = self.udp_socket.recvfrom(1024)  # Blocking call, waits for data
+                task = json.loads(data.decode())
+                print(f"[INFO] Received task: {task}")
+                self.send_task_ack(task)  # Send acknowledgment for the task
+                self.collect_metrics(task)  # Process the received task
+            except Exception as e:
+                print(f"[ERROR] Error while receiving task: {e}")
+
+    def send_task_ack(self, task):
+        """
+        Sends an acknowledgment for the received task.
+        """
         ack_message = {
             "message": "task_ack",
-            "task_id": task_id,
-            "agent_id": self.agent_id
+            "agent_id": self.agent_id,
+            "task_id": task["task_id"]  # Ensure only the task_id is included here
         }
         self.udp_socket.sendto(json.dumps(ack_message).encode(), (self.server_address, self.udp_port))
-        print(f"Sent ACK for task_id {task_id} to server.")
+        print(f"[INFO] Sent ACK for task_id {task['task_id']} to server.")
 
     def collect_metrics(self, task):
         while True:
@@ -87,33 +106,51 @@ class NMS_Agent:
                 print(f"[ERROR] Error in collect_metrics: {e}")
 
 
-    def send_metrics(self, metrics):
-        try:
-            metrics_message = {
-                "agent_id": self.agent_id,
-                "metrics": metrics
-            }
-            self.udp_socket.sendto(json.dumps(metrics_message).encode(), (self.server_address, self.udp_port))
-            print(f"[DEBUG] Metrics sent successfully: {metrics_message}")
+    def send_metrics(self, metrics, retries=3, timeout=5):
+        """
+        Sends metrics to the server with retransmission if no ACK is received.
+        """
+        metrics_message = {
+            "agent_id": self.agent_id,
+            "metrics": metrics
+        }
+        for attempt in range(retries):
+            try:
+                # Send metrics
+                self.udp_socket.sendto(json.dumps(metrics_message).encode(), (self.server_address, self.udp_port))
+                print(f"[INFO] Metrics sent successfully: {metrics_message}")
 
-            # Wait for ACK from server
-            self.wait_for_ack()
-        except Exception as e:
-            print(f"[ERROR] Failed to send metrics: {e}")
+                # Wait for acknowledgment
+                self.udp_socket.settimeout(timeout)
+                ack_data, _ = self.udp_socket.recvfrom(1024)
+                ack = json.loads(ack_data.decode())
+                if ack.get("message") == "metrics_ack" and ack.get("agent_id") == self.agent_id:
+                    print(f"[INFO] Received metrics acknowledgment from server.")
+                    return True  # Stop retrying if ACK is received
+            except socket.timeout:
+                print(f"[WARNING] No metrics ACK received, retrying ({attempt + 1}/{retries})...")
+            except Exception as e:
+                print(f"[ERROR] Error while sending metrics: {e}")
+        print(f"[ERROR] Failed to send metrics after {retries} attempts.")
+        return False
 
-    def wait_for_ack(self):
+    def wait_for_ack(self, expected_ack_type):
+        """
+        Waits for an acknowledgment of a specific type from the server.
+        """
         try:
             self.udp_socket.settimeout(5)  # Set a timeout for ACK reception
             ack_data, _ = self.udp_socket.recvfrom(1024)
             ack_message = json.loads(ack_data.decode())
-            if ack_message.get("message") == "metrics_ack" and ack_message.get("agent_id") == self.agent_id:
-                print(f"[DEBUG] Received ACK from server for metrics: {ack_message}")
+            if ack_message.get("message") == expected_ack_type and ack_message.get("agent_id") == self.agent_id:
+                print(f"[DEBUG] Received {expected_ack_type} ACK from server: {ack_message}")
             else:
                 print(f"[WARNING] Received unexpected ACK: {ack_message}")
         except socket.timeout:
-            print("[ERROR] No ACK received from server within timeout period.")
+            print(f"[ERROR] No {expected_ack_type} ACK received from server within timeout period.")
         finally:
             self.udp_socket.settimeout(None)  # Reset timeout to default
+
 
     def send_alert(self, alert_message):
         try:

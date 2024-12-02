@@ -1,0 +1,65 @@
+import socket
+import json
+
+class NetTask:
+    def __init__(self, host, udp_port):
+        self.host = host
+        self.udp_port = udp_port
+        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.udp_socket.bind((self.host, self.udp_port))
+        print(f"[INFO] NetTask listening on {self.udp_port}")
+
+        self.registered_agents = {}
+
+    def receive_message(self):
+        """
+        Receives a message over UDP.
+        """
+        try:
+            data, addr = self.udp_socket.recvfrom(1024)
+            message = json.loads(data.decode())
+            return message, addr
+        except Exception as e:
+            print(f"[ERROR] Failed to receive UDP message: {e}")
+            return None, None
+
+    def send_message(self, message, address, agent_id=None):
+        """
+        Sends a message over UDP.
+        """
+        try:
+            self.udp_socket.sendto(json.dumps(message).encode(), address)
+        except Exception as e:
+            print(f"[ERROR] Failed to send UDP message to {address}: {e}")
+
+    def send_with_retransmission(self, message, address, ack_message_type, retries=3, timeout=5):
+        """
+        Sends a message with retransmission if no ACK is received.
+        """
+        for attempt in range(retries):
+            try:
+                self.send_message(message, address)
+                print(f"[INFO] Sent message to {address}, waiting for ACK ({ack_message_type}).")
+
+                # Start the timeout only after sending the message
+                self.udp_socket.settimeout(timeout)
+
+                # Wait for ACK
+                ack_data, _ = self.udp_socket.recvfrom(1024)
+                ack = json.loads(ack_data.decode())
+                if ack.get("message") == ack_message_type and ack.get("agent_id") == message.get("agent_id"):
+                    print(f"[INFO] Received ACK for {ack_message_type} from agent {ack.get('agent_id')}")
+                    return True  # Stop retrying once ACK is received
+            except socket.timeout:
+                print(f"[WARNING] No ACK received for {ack_message_type}, retrying ({attempt + 1}/{retries})...")
+            except Exception as e:
+                print(f"[ERROR] Error during retransmission: {e}")
+        print(f"[ERROR] Failed to receive ACK for {ack_message_type} after {retries} attempts.")
+        return False
+
+    def close(self):
+        """
+        Closes the UDP socket.
+        """
+        self.udp_socket.close()
+        print("[INFO] NetTask socket closed.")
