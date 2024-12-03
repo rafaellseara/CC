@@ -50,16 +50,18 @@ class MetricCollector:
                 # Parse bandwidth
                 if "bits/sec" in line and not parsed_data["bandwidth"]:
                     parts = line.split()
-                    if len(parts) >= 6 and "bits/sec" in parts[-1]:
-                        parsed_data["bandwidth"] = parts[-2] + " " + parts[-1]  # Correctly capture bandwidth
+                    # Ensure we're capturing the bandwidth and not packet loss
+                    if "Mbits/sec" in parts or "Gbits/sec" in parts:
+                        parsed_data["bandwidth"] = parts[-2] + " " + parts[-1]
                         print(f"[DEBUG] Parsed Bandwidth: {parsed_data['bandwidth']}")
 
                 # Parse jitter and packet loss for UDP transport
                 if "ms" in line and "/" in line:
                     parts = line.split()
+                    # Ensure there are enough parts to parse
                     if len(parts) >= 8:
-                        parsed_data["jitter"] = parts[-4] + " " + parts[-3]  # Include the jitter value with unit (e.g., "0.007 ms")
-                        parsed_data["packet_loss"] = parts[-1]  # Packet loss (e.g., "(0.11%)")
+                        parsed_data["jitter"] = parts[-4] + " " + parts[-3]  # Include the jitter value with unit (e.g., "0.005 ms")
+                        parsed_data["packet_loss"] = parts[-2] + " " + parts[-1]  # Packet loss (e.g., "0/895 (0.11%)")
                         print(f"[DEBUG] Parsed Jitter: {parsed_data['jitter']}, Packet Loss: {parsed_data['packet_loss']}")
 
             if any(value for value in parsed_data.values()):

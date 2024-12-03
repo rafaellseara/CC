@@ -1,10 +1,14 @@
 import threading
 import socket
 import json
+import logging
+import curses
 from NetTask_Server import NetTask
 from AlertFlow_Server import AlertFlow
 from parse_json import TaskConfig
+from UI_Server import UIServer
 from storage import Storage
+from threading import Thread, Timer, Lock
 
 class NMS_Server:
     def __init__(self, udp_port, tcp_port):
@@ -13,85 +17,118 @@ class NMS_Server:
         self.alert_flow = AlertFlow(self.host, tcp_port)
         self.storage = Storage()
 
+        #Task Configuration
+        self.task_config = None
+        self.task_path = None
+
         # Timer and lock for task dispatch
         self.task_timer = None
         self.task_delay = 10  # seconds
         self.timer_lock = threading.Lock()
 
-        # Load the task configuration at server startup
-        self.task_config = self.load_task_config("task_config.json")
-        if not self.task_config:
-            print("[ERROR] Task configuration could not be loaded. Ensure 'task_config.json' is valid.")
+        #Threading for server functionality + UI
+        self.server_thread = None
+        self.ui = UIServer(self)
+
+        #Struct to store log messages
+        self.log_messages = []
+
+        #Configure logging
+        self.configure_logging()
 
 ############################################################################################################################################################################################
 
     def start(self):
         server_ip = socket.gethostbyname(self.host)
-        print(f"[INFO] Starting NMS_Server on IP: {server_ip}")
+        logging.info(f"Starting NMS_Server on IP: {server_ip}")
         threading.Thread(target=self.alert_flow.start).start()
+
+        try:
+            #Start the server thread
+            self.server_thread = Thread(target=self.run_server, daemon=True)
+            self.server_thread.start()
+
+            #Start the UI for the server
+            curses.wrapper(self.ui.run_curses_ui)
+        
+        except Exception as e:
+            logging.error(f"Error during server startup: {e}")
+
+############################################################################################################################################################################################
+
+    def run_server(self):
+        while (self.task_path is None):
+            continue
+
+        # Ensure task_config is loaded after UI provides it
+        if self.task_path:
+            self.task_config = self.load_task_config(self.task_path)
+            logging.info(f"Task configuration loaded: {self.task_config}")
+            if not self.task_config:
+                logging.error("Task configuration could not be loaded. Ensure the config file is valid.")
+
+        # Start AlertFlow in a separate thread
+        Thread(target=self.alert_flow.start, daemon=True).start()
 
         # Main loop for UDP (NetTask) communication
         while True:
-            message, addr = self.net_task.receive_message()
-            if message:
-                self.process_message(message, addr)
+            try:
+                message, addr = self.net_task.receive_message()
+                logging.info(f"Received message from {addr}: {message}")
+                if message:
+                    self.process_message(message, addr)
+            except Exception as e:
+                logging.error(f"Error processing message: {e}")
 
 ############################################################################################################################################################################################
 
     def stop(self):
         self.net_task.close()
         self.alert_flow.close()
-        print("[INFO] NMS_Server stopped.")
+        logging.info("NMS_Server stopped.")
 
 ############################################################################################################################################################################################
 
     def process_message(self, message, addr):
-        """
-        Processes incoming UDP messages based on their type.
-        """
-        if message.get("message") == "register":
-            self.register_agent(message, addr)
+        try:
+            message_type = message.get("message")
+            if message_type == "register":
+                self.register_agent(message, addr)
+                self.schedule_task_dispatch()
+            elif "metrics" in message:
+                self.process_metrics(message, addr)
+            elif message_type == "task_ack":
+                self.process_task_ack(message)
+            else:
+                logging.warning(f"Unknown message type: {message}")
+        except Exception as e:
+            logging.error(f"Error processing message: {e}")
 
-            # Use a timer to delay task dispatch
-            with self.timer_lock:
-                if self.task_timer:
-                    self.task_timer.cancel()
-                if self.task_config:
-                    self.task_timer = threading.Timer(self.task_delay, self.send_task_to_agents)
-                    self.task_timer.start()
-        elif "metrics" in message:
-            self.process_metrics(message, addr)
-        elif message.get("message") == "task_ack":
-            self.process_task_ack(message)
-        else:
-            print(f"[WARNING] Unknown message type: {message}")
+############################################################################################################################################################################################
+
+    def schedule_task_dispatch(self):
+        with self.timer_lock:
+            if self.task_timer:
+                self.task_timer.cancel()
+            if self.task_config:
+                self.task_timer = Timer(self.task_delay, self.send_task_to_agents)
+                self.task_timer.start()
 
 ############################################################################################################################################################################################
 
     def register_agent(self, message, addr):
-        """
-        Registers an agent and sends an acknowledgment.
-        """
-        # Assign a unique agent ID
-        agent_id = str(len(self.net_task.registered_agents) + 1)
-
-        # Store the agent's address
-        self.net_task.registered_agents[agent_id] = addr
-
-        print(f"[INFO] Registered agent {agent_id} at {addr}")
-
-        # Send acknowledgment back to the agent
-        ack = {"status": "registered", "agent_id": agent_id}
-        self.net_task.send_message(ack, addr)
+        with self.timer_lock:
+            agent_id = str(len(self.net_task.registered_agents) + 1)
+            self.net_task.registered_agents[agent_id] = addr
+            logging.info(f"Registered agent {agent_id} at {addr}")
+            ack = {"status": "registered", "agent_id": agent_id}
+            self.net_task.send_message(ack, addr)
 
 ############################################################################################################################################################################################
 
     def send_task_to_agents(self):
-        """
-        Sends tasks to all registered agents based on the task configuration.
-        """
         if not self.task_config:
-            print("[ERROR] Task configuration not loaded. Cannot send tasks.")
+            logging.error("Task configuration not loaded. Cannot send tasks.")
             return
 
         for agent_id, agent_address in self.net_task.registered_agents.items():
@@ -107,21 +144,17 @@ class NMS_Server:
                     "alertflow_conditions": vars(device.alertflow_conditions)
                 }
                 self.net_task.send_message(task_data, agent_address, agent_id=agent_id)
-                print(f"[INFO] Sent task to agent {agent_id} at {agent_address}")
+                logging.info(f"Sent task to agent {agent_id} at {agent_address}")
             else:
-                print(f"[WARNING] No matching device found in task configuration for agent {agent_id}.")
+                logging.warning(f"No matching device found in task configuration for agent {agent_id}.")
 
 ############################################################################################################################################################################################
 
     def process_metrics(self, message, addr):
-        """
-        Processes metrics received from agents and sends acknowledgment.
-        Also stores the metrics in a JSON file for each agent.
-        """
         agent_id = message.get("agent_id")
         metrics = message.get("metrics")
         if agent_id and metrics:
-            print(f"[INFO] Received metrics from agent {agent_id}: {metrics}")
+            logging.info(f"Received metrics from agent {agent_id}: {metrics}")
 
             # Store metrics using Storage
             self.storage.store_metrics_in_file(agent_id, metrics)
@@ -129,41 +162,62 @@ class NMS_Server:
             # Send acknowledgment for metrics
             ack = {"message": "metrics_ack", "agent_id": agent_id}
             self.net_task.send_message(ack, addr)
-            print(f"[INFO] Sent metrics acknowledgment to agent {agent_id}")
+            logging.info(f"Sent metrics acknowledgment to agent {agent_id}")
         else:
-            print(f"[WARNING] Invalid metrics message: {message}")
+            logging.warning(f"Invalid metrics message: {message}")
 
 ############################################################################################################################################################################################
 
     def process_task_ack(self, message):
-        """
-        Processes task acknowledgments from agents.
-        """
         agent_id = message.get("agent_id")
         task_id = message.get("task_id")
         if agent_id and task_id:
-            print(f"[INFO] Received ACK for task {task_id} from agent {agent_id}.")
+            logging.info(f"Received ACK for task {task_id} from agent {agent_id}.")
         else:
-            print(f"[WARNING] Invalid task acknowledgment message: {message}")
+            logging.warning(f"Invalid task acknowledgment message: {message}")
 
 ############################################################################################################################################################################################
 
+    def configure_logging(self):
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s [%(levelname)s] %(message)s",
+        )
+
+        # Add a custom handler to store logs in a list
+        class ListHandler(logging.Handler):
+            def __init__(self, log_storage):
+                super().__init__()
+                self.log_storage = log_storage
+
+            def emit(self, record):
+                log_entry = self.format(record)
+                self.log_storage.append(log_entry)
+
+        list_handler = ListHandler(self.log_messages)
+        list_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+        logging.getLogger().addHandler(list_handler)
+
+############################################################################################################################################################################################
+
+    def get_logs(self):
+        return "\n".join(self.log_messages)
+    
+############################################################################################################################################################################################
 
     def load_task_config(self, config_path):
-        """
-        Loads the task configuration from a JSON file.
-        """
         try:
             task_config = TaskConfig.from_json(config_path)
             if task_config:
-                print("[INFO] Loaded TaskConfig.")
+                logging.info("Loaded TaskConfig.")
                 return task_config
             else:
-                print("[WARNING] Failed to load TaskConfig.")
+                logging.warning("Failed to load TaskConfig.")
         except Exception as e:
-            print(f"[ERROR] Error loading TaskConfig: {e}")
+            logging.error(f"Error loading TaskConfig: {e}")
         return None
-
+    
+############################################################################################################################################################################################
 
 if __name__ == "__main__":
     udp_port = 5005
@@ -172,5 +226,5 @@ if __name__ == "__main__":
     try:
         server.start()
     except KeyboardInterrupt:
-        print("[INFO] Shutting down server.")
+        logging.info("Shutting down server.")
         server.stop()
