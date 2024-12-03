@@ -23,6 +23,8 @@ class NMS_Server:
         if not self.task_config:
             print("[ERROR] Task configuration could not be loaded. Ensure 'task_config.json' is valid.")
 
+############################################################################################################################################################################################
+
     def start(self):
         server_ip = socket.gethostbyname(self.host)
         print(f"[INFO] Starting NMS_Server on IP: {server_ip}")
@@ -34,10 +36,14 @@ class NMS_Server:
             if message:
                 self.process_message(message, addr)
 
+############################################################################################################################################################################################
+
     def stop(self):
         self.net_task.close()
         self.alert_flow.close()
         print("[INFO] NMS_Server stopped.")
+
+############################################################################################################################################################################################
 
     def process_message(self, message, addr):
         """
@@ -60,6 +66,8 @@ class NMS_Server:
         else:
             print(f"[WARNING] Unknown message type: {message}")
 
+############################################################################################################################################################################################
+
     def register_agent(self, message, addr):
         """
         Registers an agent and sends an acknowledgment.
@@ -75,6 +83,8 @@ class NMS_Server:
         # Send acknowledgment back to the agent
         ack = {"status": "registered", "agent_id": agent_id}
         self.net_task.send_message(ack, addr)
+
+############################################################################################################################################################################################
 
     def send_task_to_agents(self):
         """
@@ -101,6 +111,8 @@ class NMS_Server:
             else:
                 print(f"[WARNING] No matching device found in task configuration for agent {agent_id}.")
 
+############################################################################################################################################################################################
+
     def process_metrics(self, message, addr):
         """
         Processes metrics received from agents and sends acknowledgment.
@@ -121,6 +133,32 @@ class NMS_Server:
         else:
             print(f"[WARNING] Invalid metrics message: {message}")
 
+############################################################################################################################################################################################
+
+    def process_alerts(self, message, addr):
+        """
+        Processes alerts received from agents and sends acknowledgment.
+        Also stores the alerts in a JSON file for each agent.
+        """
+        agent_id = message.get("agent_id")
+        alert = message.get("alert")
+        
+        if agent_id and alert:
+            print(f"[INFO] Received alert from agent {agent_id}: {alert}")
+
+            # Store alert using Storage
+            self.storage.store_alerts_in_file(agent_id, alert)
+
+            # Send acknowledgment for alert
+            ack = {"message": "alert_ack", "agent_id": agent_id}
+            self.net_task.send_message(ack, addr)
+            print(f"[INFO] Sent alert acknowledgment to agent {agent_id}")
+        else:
+            print(f"[WARNING] Invalid alert message: {message}")
+
+
+############################################################################################################################################################################################
+
     def process_task_ack(self, message):
         """
         Processes task acknowledgments from agents.
@@ -131,6 +169,8 @@ class NMS_Server:
             print(f"[INFO] Received ACK for task {task_id} from agent {agent_id}.")
         else:
             print(f"[WARNING] Invalid task acknowledgment message: {message}")
+
+############################################################################################################################################################################################
 
 
     def load_task_config(self, config_path):

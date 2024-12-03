@@ -11,6 +11,8 @@ class AlertFlow:
         self.tcp_socket.listen(5)  # Listen for up to 5 connections
         print(f"[INFO] AlertFlow listening on {self.tcp_port}")
 
+############################################################################################################################################################################################
+
     def handle_connection(self, conn, addr):
         """
         Handles an incoming TCP connection.
@@ -29,6 +31,8 @@ class AlertFlow:
         finally:
             conn.close()
 
+############################################################################################################################################################################################
+
     def start(self):
         """
         Starts listening for incoming connections.
@@ -41,6 +45,8 @@ class AlertFlow:
                 threading.Thread(target=self.handle_connection, args=(conn, addr)).start()
             except Exception as e:
                 print(f"[ERROR] Failed to accept connection: {e}")
+
+############################################################################################################################################################################################
 
     def close(self):
         """

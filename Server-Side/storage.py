@@ -9,6 +9,8 @@ class Storage:
     def __init__(self):
         self.agent_metrics = {}
 
+############################################################################################################################################################################################
+
     def store_metrics(self, agent_id, metrics):
         """
         Stores metrics in memory for the specified agent.
@@ -18,11 +20,15 @@ class Storage:
         self.agent_metrics[agent_id].append(metrics)
         print(f"[INFO] Metrics stored in memory for agent {agent_id}.")
 
+############################################################################################################################################################################################
+
     def retrieve_metrics(self, agent_id):
         """
         Retrieves metrics for a specific agent.
         """
         return self.agent_metrics.get(agent_id, [])
+    
+############################################################################################################################################################################################
 
     @staticmethod
     def store_metrics_in_file(agent_id, metrics):
@@ -60,3 +66,31 @@ class Storage:
         except Exception as e:
             print(f"[ERROR] Failed to store metrics for agent {agent_id}: {e}")
 
+############################################################################################################################################################################################
+
+# ALERTS
+    def store_alerts(self, agent_id, alert):
+        """
+        Stores alerts in memory for the specified agent.
+        """
+        if agent_id not in self.agent_alerts:
+            self.agent_alerts[agent_id] = []
+        self.agent_alerts[agent_id].append(alert)
+        print(f"[INFO] Alert stored in memory for agent {agent_id}.")
+
+############################################################################################################################################################################################
+
+    def retrieve_alerts(self, agent_id):
+        """
+        Retrieves alerts for a specific agent.
+        """
+        return self.agent_alerts.get(agent_id, [])
+    
+############################################################################################################################################################################################
+
+    @staticmethod
+    def store_alerts_in_file(agent_id, alert):
+        """
+        Stores alerts in a JSON file specific to the agent inside a designated folder.
+        """
+        Storage._store_in_file(agent_id, alert, "alertflows", "alerts_storage")
