@@ -134,27 +134,37 @@ class NMS_Agent:
 
 ############################################################################################################################################################################################
 
-    def send_metrics(self, metrics):
-        try:
-            metrics_message = {
-                "agent_id": self.agent_id,
-                "metrics": metrics
-            }
-            self.udp_socket.sendto(json.dumps(metrics_message).encode(), (self.server_address, self.udp_port))
-            print(f"[DEBUG] Metrics sent successfully: {metrics_message}")
+    def send_metrics(self, metrics, max_retries=3):
+        retries = 0
+        while retries < max_retries:
+            try:
+                metrics_message = {
+                    "agent_id": self.agent_id,
+                    "metrics": metrics
+                }
+                self.udp_socket.sendto(json.dumps(metrics_message).encode(), (self.server_address, self.udp_port))
+                print(f"[DEBUG] Metrics sent successfully (attempt {retries + 1}): {metrics_message}")
 
-            # Wait for ACK from server
-            if self.wait_for_ack():
-                print(f"[INFO] Metrics ACK received successfully from server.")
-            else:
-                print(f"[WARNING] Metrics ACK not received from server.")
-        except Exception as e:
-            print(f"[ERROR] Failed to send metrics: {e}")
+                # Wait for ACK from server
+                if self.wait_for_ack_udp():
+                    print(f"[INFO] Metrics ACK received successfully from server.")
+                    return  # Exit the function if ACK is received
+                else:
+                    print(f"[WARNING] Metrics ACK not received from server (attempt {retries + 1}). Retrying...")
+            except Exception as e:
+                print(f"[ERROR] Failed to send metrics (attempt {retries + 1}): {e}")
+
+            # Increment the retry counter
+            retries += 1
+
+        # If maximum retries are reached
+        print(f"[ERROR] Failed to send metrics after {max_retries} attempts. Giving up.")
+
 
 
 ############################################################################################################################################################################################
 
-    def wait_for_ack(self, max_retries=3):
+    def wait_for_ack_udp(self, max_retries=3):
         retries = 0
         while retries < max_retries:
             try:
@@ -189,21 +199,91 @@ class NMS_Agent:
 
 ############################################################################################################################################################################################
 
-    def send_alert(self, alert_message):
-        try:
-            # Cria um novo socket para enviar o alerta
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp_socket:
-                # Certifique-se de que o endereço do servidor está formatado corretamente como uma tupla
-                server_address = (self.server_address, self.tcp_port)
+    def send_alert(self, alert_message, max_retries=3):
+        """
+        Sends an alert message to the server, with retransmission and ACK handling.
+        
+        Args:
+            alert_message (str): The alert message to send.
+            max_retries (int): Maximum number of retransmission attempts if no ACK is received.
+        """
+        retries = 0
+        while retries < max_retries:
+            try:
+                # Cria o socket TCP
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp_socket:
+                    # Conecta ao servidor
+                    tcp_socket.connect((self.server_address, self.tcp_port))
+                    print(f"[INFO] Connected to server at {self.server_address}:{self.tcp_port}")
+
+                    # Prepara o alerta como um dicionário e converte para JSON
+                    alert_data = {"alert": alert_message}
+                    tcp_socket.sendall(json.dumps(alert_data).encode())
+                    print(f"[INFO] Sent alert to server: {alert_message}")
+
+                    # Espera pelo ACK do servidor
+                    if self.wait_for_ack_tcp():
+                        print(f"[INFO] Alert ACK received successfully from server.")
+                        return  # Se o ACK for recebido, sai da função
+                    else:
+                        print(f"[WARNING] Alert ACK not received from server (attempt {retries + 1}). Retrying...")
+
+            except Exception as e:
+                print(f"[ERROR] Failed to send alert (attempt {retries + 1}): {e}")
+            
+            retries += 1  # Incrementa o contador de tentativas
+
+        # Se o número máximo de tentativas for atingido
+        print(f"[ERROR] Failed to send alert after {max_retries} attempts. Giving up.")
+
+
+
+############################################################################################################################################################################################
+
+    def wait_for_ack_tcp(self, max_retries=3):
+        retries = 0
+        while retries < max_retries:
+            try:
+                # Configura o timeout de 5 segundos para aguardar o ACK
+                self.tcp_socket.settimeout(5)  
                 
-                # Conecta ao servidor
-                tcp_socket.connect(server_address)
-                
-                # Envia a mensagem de alerta
-                tcp_socket.sendall(alert_message.encode())
-                print(f"Sent alert to server: {alert_message}")
-        except Exception as e:
-            print(f"Failed to send alert: {e}")
+                # Aguarda até 5 segundos por dados
+                ack_data = self.tcp_socket.recv(1024)
+
+                # Se não receber dados após 5 segundos, tentamos novamente
+                if not ack_data:
+                    logging.error(f"[ERROR] No data received. Retry {retries + 1}/{max_retries}")
+                    retries += 1
+                    continue
+
+                # Decodifica a mensagem recebida
+                ack_message = json.loads(ack_data.decode())
+
+                # Verifica se o ACK é válido
+                if ack_message.get("status") == "ack" and ack_message.get("alert_received"):
+                    logging.info(f"[DEBUG] Received valid ACK: {ack_message}")
+                    return True
+                else:
+                    logging.warning(f"[WARNING] Unexpected ACK content: {ack_message}")
+                    retries += 1
+
+            except json.JSONDecodeError:
+                # Caso a mensagem seja malformada
+                logging.error("[ERROR] Received malformed ACK. Failed to parse JSON.")
+                retries += 1
+            except socket.timeout:
+                # Timeout específico, não incrementa retries até a próxima tentativa
+                logging.error(f"[ERROR] No ACK received after waiting for 5 seconds. Retry {retries + 1}/{max_retries}")
+                retries += 1
+            except socket.error as e:
+                # Se ocorrer erro no socket (desconexão, etc.)
+                logging.error(f"[ERROR] Socket error: {e}. Retry {retries + 1}/{max_retries}")
+                retries += 1
+
+        # Se todas as tentativas falharem
+        logging.error("[ERROR] Failed to receive ACK after maximum retries.")
+        return False
+
 
 ############################################################################################################################################################################################
 

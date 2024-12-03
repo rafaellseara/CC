@@ -135,30 +135,6 @@ class NMS_Server:
 
 ############################################################################################################################################################################################
 
-    def process_alerts(self, message, addr):
-        """
-        Processes alerts received from agents and sends acknowledgment.
-        Also stores the alerts in a JSON file for each agent.
-        """
-        agent_id = message.get("agent_id")
-        alert = message.get("alert")
-        
-        if agent_id and alert:
-            print(f"[INFO] Received alert from agent {agent_id}: {alert}")
-
-            # Store alert using Storage
-            self.storage.store_alerts_in_file(agent_id, alert)
-
-            # Send acknowledgment for alert
-            ack = {"message": "alert_ack", "agent_id": agent_id}
-            self.net_task.send_message(ack, addr)
-            print(f"[INFO] Sent alert acknowledgment to agent {agent_id}")
-        else:
-            print(f"[WARNING] Invalid alert message: {message}")
-
-
-############################################################################################################################################################################################
-
     def process_task_ack(self, message):
         """
         Processes task acknowledgments from agents.
