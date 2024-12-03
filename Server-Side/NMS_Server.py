@@ -13,28 +13,26 @@ from threading import Thread, Timer, Lock
 class NMS_Server:
     def __init__(self, udp_port, tcp_port):
         self.host = "127.0.0.1"
-        self.net_task = NetTask(self.host, udp_port)
-        self.alert_flow = AlertFlow(self.host, tcp_port)
-        self.storage = Storage()
 
-        #Task Configuration
+        # Initialize the logger early
+        self.log_messages = []
+        self.configure_logging()
+
+        # Pass the root logger to dependencies
+        self.net_task = NetTask(self.host, udp_port, logging.getLogger())
+        self.alert_flow = AlertFlow(self.host, tcp_port, logging.getLogger())
+        self.storage = Storage(logging.getLogger())
+
         self.task_config = None
         self.task_path = None
 
         # Timer and lock for task dispatch
         self.task_timer = None
-        self.task_delay = 10  # seconds
+        self.task_delay = 10
         self.timer_lock = threading.Lock()
 
-        #Threading for server functionality + UI
         self.server_thread = None
         self.ui = UIServer(self)
-
-        #Struct to store log messages
-        self.log_messages = []
-
-        #Configure logging
-        self.configure_logging()
 
 ############################################################################################################################################################################################
 
@@ -63,7 +61,7 @@ class NMS_Server:
         # Ensure task_config is loaded after UI provides it
         if self.task_path:
             self.task_config = self.load_task_config(self.task_path)
-            logging.info(f"Task configuration loaded: {self.task_config}")
+            logging.info(f"Task configuration loaded")
             if not self.task_config:
                 logging.error("Task configuration could not be loaded. Ensure the config file is valid.")
 
@@ -179,12 +177,11 @@ class NMS_Server:
 ############################################################################################################################################################################################
 
     def configure_logging(self):
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s [%(levelname)s] %(message)s",
-        )
+        # Remove all existing handlers to prevent duplicate outputs
+        for handler in logging.root.handlers[:]:
+            logging.root.removeHandler(handler)
 
-        # Add a custom handler to store logs in a list
+        # Add a custom handler to store logs in the log_messages list
         class ListHandler(logging.Handler):
             def __init__(self, log_storage):
                 super().__init__()
@@ -196,8 +193,13 @@ class NMS_Server:
 
         list_handler = ListHandler(self.log_messages)
         list_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+
+        # Attach the ListHandler to the root logger
         logging.getLogger().addHandler(list_handler)
 
+        # Ensure the root logger uses only the ListHandler
+        logging.getLogger().setLevel(logging.INFO)
+        
 ############################################################################################################################################################################################
 
     def get_logs(self):

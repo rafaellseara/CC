@@ -1,0 +1,558 @@
+[
+    {
+        "cpu_usage": 42.9,
+        "ram_usage": 85.5,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "1.05 Mbits/sec",
+                "jitter": "0.000 ms",
+                "packet_loss": "0/894 (0%)"
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 41.4,
+        "ram_usage": 84.7,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "67.7 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 80.0,
+        "ram_usage": 88.2,
+        "link_metrics": {
+            "bandwidth": null,
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 48.4,
+        "ram_usage": 86.8,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "32.9 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 43.6,
+        "ram_usage": 86.2,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "59.1 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 42.5,
+        "ram_usage": 87.1,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "44.0 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 46.2,
+        "ram_usage": 86.0,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "49.8 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 43.5,
+        "ram_usage": 86.9,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "65.7 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 58.7,
+        "ram_usage": 87.4,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "29.6 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 46.0,
+        "ram_usage": 86.3,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "41.5 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 43.4,
+        "ram_usage": 87.3,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "41.3 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 59.1,
+        "ram_usage": 87.9,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "14.8 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 44.2,
+        "ram_usage": 86.6,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "65.2 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 40.5,
+        "ram_usage": 84.8,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "46.4 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 50.3,
+        "ram_usage": 85.9,
+        "link_metrics": {
+            "bandwidth": null,
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 50.1,
+        "ram_usage": 86.3,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "42.7 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 49.6,
+        "ram_usage": 87.2,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "54.5 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 50.8,
+        "ram_usage": 86.7,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "37.0 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 52.8,
+        "ram_usage": 85.7,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "54.5 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 48.3,
+        "ram_usage": 86.5,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "37.9 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 55.4,
+        "ram_usage": 87.4,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "46.5 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 45.7,
+        "ram_usage": 87.4,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "42.8 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 43.8,
+        "ram_usage": 86.7,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "66.9 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 61.6,
+        "ram_usage": 85.5,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "34.0 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 43.3,
+        "ram_usage": 86.1,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "41.5 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 41.8,
+        "ram_usage": 86.8,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "49.4 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 56.0,
+        "ram_usage": 84.9,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "40.5 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 37.8,
+        "ram_usage": 87.0,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "54.3 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 63.2,
+        "ram_usage": 87.8,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "40.6 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 73.9,
+        "ram_usage": 88.1,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "15.9 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 52.4,
+        "ram_usage": 87.2,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "41.4 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 49.0,
+        "ram_usage": 87.6,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "55.8 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 45.1,
+        "ram_usage": 86.8,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "44.3 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 50.3,
+        "ram_usage": 86.7,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "45.8 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 57.9,
+        "ram_usage": 87.5,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "50.1 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 44.9,
+        "ram_usage": 87.1,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "40.5 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 48.8,
+        "ram_usage": 87.1,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "62.2 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 72.1,
+        "ram_usage": 87.4,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "22.7 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 49.1,
+        "ram_usage": 87.3,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "65.9 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 41.4,
+        "ram_usage": 86.6,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "67.7 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 40.8,
+        "ram_usage": 87.1,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "51.1 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 41.1,
+        "ram_usage": 85.9,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "45.6 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 43.0,
+        "ram_usage": 86.5,
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "28.3 Gbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 60.5,
+        "ram_usage": 87.5,
+        "link_metrics": {
+            "bandwidth": null,
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 44.9,
+        "ram_usage": 86.4,
+        "link_metrics": {
+            "bandwidth": null,
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 36.8,
+        "ram_usage": 85.8,
+        "link_metrics": {
+            "bandwidth": null,
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 40.4,
+        "ram_usage": 84.9,
+        "link_metrics": {
+            "bandwidth": null,
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 40.9,
+        "ram_usage": 84.4,
+        "link_metrics": {
+            "bandwidth": null,
+            "latency": null
+        }
+    },
+    {
+        "cpu_usage": 43.0,
+        "ram_usage": 86.8,
+        "link_metrics": {
+            "bandwidth": null,
+            "latency": null
+        }
+    }
+]

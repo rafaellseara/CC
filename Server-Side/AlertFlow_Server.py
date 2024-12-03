@@ -1,15 +1,20 @@
 import socket
 import threading
 import json
+import logging
 
 class AlertFlow:
-    def __init__(self, host, tcp_port):
+    def __init__(self, host, tcp_port, logger=None):
         self.host = host
         self.tcp_port = tcp_port
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.tcp_socket.bind((self.host, self.tcp_port))
         self.tcp_socket.listen(5)  # Listen for up to 5 connections
-        print(f"[INFO] AlertFlow listening on {self.tcp_port}")
+
+        # Use the provided logger or the root logger
+        self.logger = logger or logging.getLogger()
+
+        self.logger.info(f"AlertFlow listening on {self.tcp_port}")
 
 ############################################################################################################################################################################################
 
@@ -20,14 +25,14 @@ class AlertFlow:
         try:
             data = conn.recv(1024)
             alert = json.loads(data.decode())
-            print(f"[INFO] Received alert from {addr}: {alert}")
+            self.logger.info(f"Received alert from {addr}: {alert}")
 
             # Optionally, send an acknowledgment back
             ack_message = {"status": "ack", "alert_received": True}
             conn.sendall(json.dumps(ack_message).encode())
-            print(f"[INFO] Sent ACK to {addr}")
+            self.logger.info(f"Sent ACK to {addr}")
         except Exception as e:
-            print(f"[ERROR] Error handling connection from {addr}: {e}")
+            self.logger.error(f"Error handling connection from {addr}: {e}")
         finally:
             conn.close()
 
@@ -37,14 +42,14 @@ class AlertFlow:
         """
         Starts listening for incoming connections.
         """
-        print("[INFO] AlertFlow server started.")
+        logging.info("AlertFlow server started.")
         while True:
             try:
                 conn, addr = self.tcp_socket.accept()
-                print(f"[INFO] Connection accepted from {addr}")
+                logging.info(f"Connection accepted from {addr}")
                 threading.Thread(target=self.handle_connection, args=(conn, addr)).start()
             except Exception as e:
-                print(f"[ERROR] Failed to accept connection: {e}")
+                logging.error(f"Failed to accept connection: {e}")
 
 ############################################################################################################################################################################################
 
@@ -53,4 +58,4 @@ class AlertFlow:
         Closes the TCP socket.
         """
         self.tcp_socket.close()
-        print("[INFO] AlertFlow socket closed.")
+        logging.info("AlertFlow socket closed.")

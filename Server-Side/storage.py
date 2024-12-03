@@ -1,13 +1,18 @@
 import os
 import json
+import logging
 
 class Storage:
     """
     A storage class to manage the metrics and other data received from agents.
     """
 
-    def __init__(self):
+    def __init__(self, logger=None):
         self.agent_metrics = {}
+        self.agent_alerts = {}
+
+        # Use the provided logger or the root logger
+        self.logger = logger or logging.getLogger()
 
 ############################################################################################################################################################################################
 
@@ -18,7 +23,7 @@ class Storage:
         if agent_id not in self.agent_metrics:
             self.agent_metrics[agent_id] = []
         self.agent_metrics[agent_id].append(metrics)
-        print(f"[INFO] Metrics stored in memory for agent {agent_id}.")
+        self.logger.info(f"Metrics stored in memory for agent {agent_id}.")
 
 ############################################################################################################################################################################################
 
@@ -27,11 +32,10 @@ class Storage:
         Retrieves metrics for a specific agent.
         """
         return self.agent_metrics.get(agent_id, [])
-    
+
 ############################################################################################################################################################################################
 
-    @staticmethod
-    def store_metrics_in_file(agent_id, metrics):
+    def store_metrics_in_file(self, agent_id, metrics):
         """
         Stores metrics in a JSON file specific to the agent inside a designated folder.
         """
@@ -39,7 +43,7 @@ class Storage:
         storage_folder = "metrics_storage"
         if not os.path.exists(storage_folder):
             os.makedirs(storage_folder)
-            print(f"[INFO] Created storage folder at {storage_folder}.")
+            self.logger.info(f"Created storage folder at {storage_folder}.")
 
         # Construct the file path
         file_name = f"agent{agent_id}_metrics_collected.json"
@@ -62,13 +66,12 @@ class Storage:
         try:
             with open(file_path, "w") as file:
                 json.dump(existing_metrics, file, indent=4)
-            print(f"[INFO] Metrics for agent {agent_id} stored in {file_path}.")
+            self.logger.info(f"Metrics for agent {agent_id} stored in {file_path}.")
         except Exception as e:
-            print(f"[ERROR] Failed to store metrics for agent {agent_id}: {e}")
+            self.logger.error(f"Failed to store metrics for agent {agent_id}: {e}")
 
 ############################################################################################################################################################################################
 
-# ALERTS
     def store_alerts(self, agent_id, alert):
         """
         Stores alerts in memory for the specified agent.
@@ -76,7 +79,7 @@ class Storage:
         if agent_id not in self.agent_alerts:
             self.agent_alerts[agent_id] = []
         self.agent_alerts[agent_id].append(alert)
-        print(f"[INFO] Alert stored in memory for agent {agent_id}.")
+        self.logger.info(f"Alert stored in memory for agent {agent_id}.")
 
 ############################################################################################################################################################################################
 
@@ -85,12 +88,40 @@ class Storage:
         Retrieves alerts for a specific agent.
         """
         return self.agent_alerts.get(agent_id, [])
-    
+
 ############################################################################################################################################################################################
 
-    @staticmethod
-    def store_alerts_in_file(agent_id, alert):
+    def store_alerts_in_file(self, agent_id, alert):
         """
         Stores alerts in a JSON file specific to the agent inside a designated folder.
         """
-        Storage._store_in_file(agent_id, alert, "alertflows", "alerts_storage")
+        # Define the storage folder
+        storage_folder = "alerts_storage"
+        if not os.path.exists(storage_folder):
+            os.makedirs(storage_folder)
+            self.logger.info(f"Created storage folder at {storage_folder}.")
+
+        # Construct the file path
+        file_name = f"agent{agent_id}_alerts.json"
+        file_path = os.path.join(storage_folder, file_name)
+
+        # Read existing alerts if the file exists
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, "r") as file:
+                    existing_alerts = json.load(file)
+            except json.JSONDecodeError:
+                existing_alerts = []
+        else:
+            existing_alerts = []
+
+        # Append the new alert
+        existing_alerts.append(alert)
+
+        # Write updated alerts back to the file
+        try:
+            with open(file_path, "w") as file:
+                json.dump(existing_alerts, file, indent=4)
+            self.logger.info(f"Alert for agent {agent_id} stored in {file_path}.")
+        except Exception as e:
+            self.logger.error(f"Failed to store alert for agent {agent_id}: {e}")
