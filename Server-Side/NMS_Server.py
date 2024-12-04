@@ -12,7 +12,7 @@ from threading import Thread, Timer, Lock
 
 class NMS_Server:
     def __init__(self, udp_port, tcp_port):
-        self.host = "127.0.0.1"
+        self.host = self.local_ip()
 
         # Initialize the logger early
         self.log_messages = []
@@ -33,6 +33,18 @@ class NMS_Server:
 
         self.server_thread = None
         self.ui = UIServer(self)
+
+############################################################################################################################################################################################
+    
+    def local_ip(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            try:
+                s.connect(("1.1.1.1", 53))
+                local_ip_address = s.getsockname()[0]
+            except Exception as e:
+                print(f"[ERROR] Could not determine local IP: {e}")
+                local_ip_address = None
+            return local_ip_address
 
 ############################################################################################################################################################################################
 
