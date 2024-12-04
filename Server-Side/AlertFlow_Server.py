@@ -32,7 +32,7 @@ class AlertFlow:
             conn.sendall(json.dumps(ack_message).encode())
             self.logger.info(f"Sent ACK to {addr}")
         except Exception as e:
-            self.logger.error(f"[ERROR] Failed while handling connection from {addr}: {e}")
+            self.logger.error(f"Failed while handling connection from {addr}: {e}")
         finally:
             conn.close()
 
@@ -49,7 +49,7 @@ class AlertFlow:
                 logging.info(f"Connection accepted from {addr}")
                 threading.Thread(target=self.handle_connection, args=(conn, addr)).start()
             except Exception as e:
-                logging.error(f"[ERROR] Failed to accept connection: {e}")
+                logging.error(f"Failed to accept connection: {e}")
 
 ############################################################################################################################################################################################
 

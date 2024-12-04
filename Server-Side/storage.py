@@ -68,7 +68,7 @@ class Storage:
                 json.dump(existing_metrics, file, indent=4)
             self.logger.info(f"Metrics for agent {agent_id} stored in {file_path}.")
         except Exception as e:
-            self.logger.error(f"[ERROR] Failed to store metrics for agent {agent_id}: {e}")
+            self.logger.error(f"Failed to store metrics for agent {agent_id}: {e}")
 
 ############################################################################################################################################################################################
 
@@ -124,4 +124,4 @@ class Storage:
                 json.dump(existing_alerts, file, indent=4)
             self.logger.info(f"Alert for agent {agent_id} stored in {file_path}.")
         except Exception as e:
-            self.logger.error(f"[ERROR] Failed to store alert for agent {agent_id}: {e}")
+            self.logger.error(f"Failed to store alert for agent {agent_id}: {e}")

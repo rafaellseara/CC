@@ -181,21 +181,21 @@ class NMS_Agent:
                     logging.info(f"Received valid ACK: {ack_message}")
                     return True
                 else:
-                    logging.warning(f"[ERROR] Unexpected ACK content: {ack_message}")
+                    logging.warning(f"Unexpected ACK content: {ack_message}")
             except socket.timeout:
                 # Timeout ao aguardar ACK, incrementa tentativa
                 retries += 1
-                logging.error(f"[ERROR] No ACK received. Retry {retries}/{max_retries}")
+                logging.error(f"No ACK received. Retry {retries}/{max_retries}")
             except json.JSONDecodeError:
                 # Caso a mensagem seja malformada
-                logging.error("[ERROR] Received malformed ACK. Failed to parse JSON.")
+                logging.error("Received malformed ACK. Failed to parse JSON.")
                 return False
             finally:
                 # Restaura timeout para estado padrão
                 self.udp_socket.settimeout(None)
         
         # Se todas as tentativas falharem
-        logging.error("[ERROR] Failed to receive ACK after maximum retries.")
+        logging.error("Failed to receive ACK after maximum retries.")
         return False
 
 ############################################################################################################################################################################################
@@ -253,7 +253,7 @@ class NMS_Agent:
 
                 # Se não receber dados após 5 segundos, tentamos novamente
                 if not ack_data:
-                    logging.error(f"[ERROR] No data received. Retry {retries + 1}/{max_retries}")
+                    logging.error(f"No data received. Retry {retries + 1}/{max_retries}")
                     retries += 1
                     continue
 
@@ -265,24 +265,24 @@ class NMS_Agent:
                     logging.info(f"Received valid ACK: {ack_message}")
                     return True
                 else:
-                    logging.warning(f"[ERROR] Unexpected ACK content: {ack_message}")
+                    logging.warning(f"Unexpected ACK content: {ack_message}")
                     retries += 1
 
             except json.JSONDecodeError:
                 # Caso a mensagem seja malformada
-                logging.error("[ERROR] Received malformed ACK. Failed to parse JSON.")
+                logging.error("Received malformed ACK. Failed to parse JSON.")
                 retries += 1
             except socket.timeout:
                 # Timeout específico, não incrementa retries até a próxima tentativa
-                logging.error(f"[ERROR] No ACK received after waiting for 5 seconds. Retry {retries + 1}/{max_retries}")
+                logging.error(f"No ACK received after waiting for 5 seconds. Retry {retries + 1}/{max_retries}")
                 retries += 1
             except socket.error as e:
                 # Se ocorrer erro no socket (desconexão, etc.)
-                logging.error(f"[ERROR] Socket error: {e}. Retry {retries + 1}/{max_retries}")
+                logging.error(f"Socket error: {e}. Retry {retries + 1}/{max_retries}")
                 retries += 1
 
         # Se todas as tentativas falharem
-        logging.error("[ERROR] Failed to receive ACK after maximum retries.")
+        logging.error("Failed to receive ACK after maximum retries.")
         return False
 
 
@@ -315,7 +315,7 @@ class NMS_Agent:
 
     def start(self):
         if not self.register():
-            logging.error("[ERROR] Agent registration failed. Terminating program.")
+            logging.error("Agent registration failed. Terminating program.")
             sys.exit(1)  # Código de saída 1 indica erro
 
         # Start a separate thread for receiving tasks from the server
