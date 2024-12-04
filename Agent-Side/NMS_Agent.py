@@ -3,6 +3,7 @@ import json
 import time
 import threading
 import logging
+import sys
 from metrics import MetricCollector 
 
 class NMS_Agent:
@@ -44,20 +45,20 @@ class NMS_Agent:
                 # Verifica se o registo foi bem-sucedido
                 if response.get("status") == "registered":
                     self.agent_id = response.get("agent_id")
-                    print(f"Agent successfully registered with assigned agent_id: {self.agent_id}")
+                    print(f"Agent {self.agent_id} successfully registered")
                     return True  # Registo concluído com sucesso
                 else:
-                    print(f"Attempt {attempt}: Unexpected response: {response}")
+                    print(f"[ERROR] Attempt {attempt}: Unexpected response: {response}")
                     return False
 
             except socket.timeout:
-                print(f"Attempt {attempt}: No response from server, retrying...")
+                print(f"[ERROR] Attempt {attempt}: No response from server, retrying...")
 
             except Exception as e:
-                print(f"Attempt {attempt}: Error during registration: {e}")
+                print(f"[ERROR] Attempt {attempt}: Error during registration: {e}")
 
         # Após atingir o limite de tentativas
-        print("Failed to register agent after maximum retries.")
+        print("[ERROR] Failed to register agent after maximum retries.")
         return False
     
 ############################################################################################################################################################################################
@@ -82,7 +83,7 @@ class NMS_Agent:
 
             except socket.timeout:
                 # Timeout enquanto aguardava por mensagens, continua ouvindo
-                print("[DEBUG] No task received within timeout period, continuing to listen...")
+                print("No task received within timeout period, continuing to listen...")
 
             except json.JSONDecodeError:
                 # Tratamento para mensagens malformadas
@@ -97,7 +98,7 @@ class NMS_Agent:
 
     def send_task_ack(self, task_id):
         if not task_id:
-            print("No task ID found to send ACK.")
+            print("[ERROR] No task ID found to send ACK.")
             return
         
         ack_message = {
@@ -113,11 +114,11 @@ class NMS_Agent:
     def collect_metrics(self, task):
         while True:
             try:
-                print(f"[DEBUG] Collecting metrics for task ID: {task.get('task_id')}")
+                print(f"Collecting metrics for task ID: {task.get('task_id')}")
 
                 # Collect all metrics, including CPU and RAM usage
                 metrics = self.metric_collector.collect_all_metrics(task)
-                print(f"[DEBUG] Metrics collected: {metrics}")
+                print(f"Metrics collected: {metrics}")
 
                 # Send metrics to the server
                 self.send_metrics(metrics)
@@ -127,7 +128,7 @@ class NMS_Agent:
 
                 # Sleep for the frequency defined in the task
                 sleep_duration = task.get("frequency", 30)
-                print(f"[DEBUG] Sleeping for {sleep_duration} seconds before next collection.")
+                print(f"Sleeping for {sleep_duration} seconds before next collection.")
                 time.sleep(sleep_duration)
             except Exception as e:
                 print(f"[ERROR] Error in collect_metrics: {e}")
@@ -143,14 +144,14 @@ class NMS_Agent:
                     "metrics": metrics
                 }
                 self.udp_socket.sendto(json.dumps(metrics_message).encode(), (self.server_address, self.udp_port))
-                print(f"[DEBUG] Metrics sent successfully (attempt {retries + 1}): {metrics_message}")
+                print(f"Metrics sent successfully (attempt {retries + 1}): {metrics_message}")
 
                 # Wait for ACK from server
                 if self.wait_for_ack_udp():
-                    print(f"[INFO] Metrics ACK received successfully from server.")
+                    print(f"Metrics ACK received successfully from server.")
                     return  # Exit the function if ACK is received
                 else:
-                    print(f"[WARNING] Metrics ACK not received from server (attempt {retries + 1}). Retrying...")
+                    print(f"[ERROR] Metrics ACK not received from server (attempt {retries + 1}). Retrying...")
             except Exception as e:
                 print(f"[ERROR] Failed to send metrics (attempt {retries + 1}): {e}")
 
@@ -177,10 +178,10 @@ class NMS_Agent:
                 
                 # Verifica se o ACK é válido
                 if ack_message.get("message") == "metrics_ack" and ack_message.get("agent_id") == self.agent_id:
-                    logging.info(f"[DEBUG] Received valid ACK: {ack_message}")
+                    logging.info(f"Received valid ACK: {ack_message}")
                     return True
                 else:
-                    logging.warning(f"[WARNING] Unexpected ACK content: {ack_message}")
+                    logging.warning(f"[ERROR] Unexpected ACK content: {ack_message}")
             except socket.timeout:
                 # Timeout ao aguardar ACK, incrementa tentativa
                 retries += 1
@@ -214,19 +215,19 @@ class NMS_Agent:
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp_socket:
                     # Conecta ao servidor
                     tcp_socket.connect((self.server_address, self.tcp_port))
-                    print(f"[INFO] Connected to server at {self.server_address}:{self.tcp_port}")
+                    print(f"Connected to server at {self.server_address}:{self.tcp_port}")
 
                     # Prepara o alerta como um dicionário e converte para JSON
                     alert_data = {"alert": alert_message}
                     tcp_socket.sendall(json.dumps(alert_data).encode())
-                    print(f"[INFO] Sent alert to server: {alert_message}")
+                    print(f"Sent alert to server: {alert_message}")
 
                     # Espera pelo ACK do servidor
                     if self.wait_for_ack_tcp():
-                        print(f"[INFO] Alert ACK received successfully from server.")
+                        print(f"Alert ACK received successfully from server.")
                         return  # Se o ACK for recebido, sai da função
                     else:
-                        print(f"[WARNING] Alert ACK not received from server (attempt {retries + 1}). Retrying...")
+                        print(f"[ERROR] Alert ACK not received from server (attempt {retries + 1}). Retrying...")
 
             except Exception as e:
                 print(f"[ERROR] Failed to send alert (attempt {retries + 1}): {e}")
@@ -261,10 +262,10 @@ class NMS_Agent:
 
                 # Verifica se o ACK é válido
                 if ack_message.get("status") == "ack" and ack_message.get("alert_received"):
-                    logging.info(f"[DEBUG] Received valid ACK: {ack_message}")
+                    logging.info(f"Received valid ACK: {ack_message}")
                     return True
                 else:
-                    logging.warning(f"[WARNING] Unexpected ACK content: {ack_message}")
+                    logging.warning(f"[ERROR] Unexpected ACK content: {ack_message}")
                     retries += 1
 
             except json.JSONDecodeError:
@@ -313,7 +314,9 @@ class NMS_Agent:
 ############################################################################################################################################################################################
 
     def start(self):
-        self.register()
+        if not self.register():
+            logging.error("[ERROR] Agent registration failed. Terminating program.")
+            sys.exit(1)  # Código de saída 1 indica erro
 
         # Start a separate thread for receiving tasks from the server
         task_thread = threading.Thread(target=self.receive_task)
