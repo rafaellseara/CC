@@ -94,7 +94,7 @@ class TaskConfig:
             return cls(task_id=task_id, frequency=frequency, devices=devices)
 
         except (FileNotFoundError, json.JSONDecodeError) as e:
-            print(f"Error reading or parsing JSON file: {e}")
+            print(f"[ERROR] Failed  JSON file: {e}")
             return None
 
     def __repr__(self):

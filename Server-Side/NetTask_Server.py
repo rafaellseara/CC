@@ -25,7 +25,7 @@ class NetTask:
             message = json.loads(data.decode())
             return message, addr
         except Exception as e:
-            self.logger.error(f"Failed to receive UDP message: {e}")
+            self.logger.error(f"[ERROR] Failed to receive UDP message: {e}")
             return None, None
 
     def send_message(self, message, address, agent_id=None):
@@ -36,7 +36,7 @@ class NetTask:
             self.udp_socket.sendto(json.dumps(message).encode(), address)
             self.logger.info(f"Message sent to {address}")
         except Exception as e:
-            self.logger.error(f"Failed to send UDP message to {address}: {e}")
+            self.logger.error(f"[ERROR] Failed to send UDP message to {address}: {e}")
 
     def send_with_retransmission(self, message, address, ack_message_type, retries=3, timeout=5):
         """
@@ -57,10 +57,10 @@ class NetTask:
                     self.logger.info(f"Received ACK for {ack_message_type} from agent {ack.get('agent_id')}")
                     return True  # Stop retrying once ACK is received
             except socket.timeout:
-                self.logger.warning(f"No ACK received for {ack_message_type}, retrying ({attempt + 1}/{retries})...")
+                self.logger.warning(f"[ERROR] No ACK received for {ack_message_type}, retrying ({attempt + 1}/{retries})...")
             except Exception as e:
-                self.logger.error(f"Error during retransmission: {e}")
-        self.logger.error(f"Failed to receive ACK for {ack_message_type} after {retries} attempts.")
+                self.logger.error(f"[ERROR] Failed retransmission: {e}")
+        self.logger.error(f"[ERROR] Failed to receive ACK for {ack_message_type} after {retries} attempts")
         return False
 
     def close(self):
@@ -68,4 +68,4 @@ class NetTask:
         Closes the UDP socket.
         """
         self.udp_socket.close()
-        self.logger.info("NetTask socket closed.")
+        self.logger.info("NetTask socket closed")
