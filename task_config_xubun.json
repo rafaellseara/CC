@@ -1,0 +1,67 @@
+{
+    "task_id": "task-202",
+    "frequency": 20,
+    "devices": [
+      {
+        "device_id": "1",
+        "device_metrics": {
+          "cpu_usage": true,
+          "ram_usage": true,
+          "interface_stats": ["10.0.0.1"]
+        },
+        "link_metrics": {
+          "bandwidth": {
+            "enabled": true,
+            "tool": "iperf",
+            "role": "server",
+            "server_address": "10.0.0.2",
+            "duration": 10,
+            "transport_type": "UDP",
+            "frequency": 30
+          },
+          "latency": {
+            "enabled": true,
+            "tool": "ping",
+            "destination": "10.0.0.2",
+            "packet_count": 5,
+            "frequency": 20
+          }
+        },
+        "alertflow_conditions": {
+          "cpu_usage": 80.0,
+          "ram_usage": 90.0
+        }
+      },
+      {
+        "device_id": "2",
+        "device_metrics": {
+          "cpu_usage": true,
+          "ram_usage": true,
+          "interface_stats": ["10.0.7.1"]
+        },
+        "link_metrics": {
+          "bandwidth": {
+            "enabled": true,
+            "tool": "iperf",
+            "role": "client",
+            "server_address": "10.0.7.2",
+            "duration": 10,
+            "transport_type": "UDP",
+            "frequency": 30
+          },
+          "latency": {
+            "enabled": true,
+            "tool": "ping",
+            "destination": "10.0.7.2",
+            "packet_count": 5,
+            "frequency": 20
+          }
+        },
+        "alertflow_conditions": {
+          "cpu_usage": 75.0,
+          "ram_usage": 85.0
+        }
+      }
+    ]
+  }
+  
