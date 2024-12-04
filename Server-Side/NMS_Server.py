@@ -50,7 +50,7 @@ class NMS_Server:
             curses.wrapper(self.ui.run_curses_ui)
         
         except Exception as e:
-            logging.error(f"Error during server startup: {e}")
+            logging.error(f"[ERROR] Failed to start server: {e}")
 
 ############################################################################################################################################################################################
 
@@ -63,7 +63,7 @@ class NMS_Server:
             self.task_config = self.load_task_config(self.task_path)
             logging.info(f"Task configuration loaded")
             if not self.task_config:
-                logging.error("Task configuration could not be loaded. Ensure the config file is valid.")
+                logging.error("[ERROR] Failed to load Task configuration")
 
         # Start AlertFlow in a separate thread
         Thread(target=self.alert_flow.start, daemon=True).start()
@@ -76,14 +76,14 @@ class NMS_Server:
                 if message:
                     self.process_message(message, addr)
             except Exception as e:
-                logging.error(f"Error processing message: {e}")
+                logging.error(f"[ERROR] Failed to process message: {e}")
 
 ############################################################################################################################################################################################
 
     def stop(self):
         self.net_task.close()
         self.alert_flow.close()
-        logging.info("NMS_Server stopped.")
+        logging.info("NMS_Server stopped")
 
 ############################################################################################################################################################################################
 
@@ -98,9 +98,9 @@ class NMS_Server:
             elif message_type == "task_ack":
                 self.process_task_ack(message)
             else:
-                logging.warning(f"Unknown message type: {message}")
+                logging.warning(f"[ERROR] Unknown message type: {message}")
         except Exception as e:
-            logging.error(f"Error processing message: {e}")
+            logging.error(f"[ERROR] Failed to process message: {e}")
 
 ############################################################################################################################################################################################
 
@@ -118,7 +118,7 @@ class NMS_Server:
         with self.timer_lock:
             agent_id = str(len(self.net_task.registered_agents) + 1)
             self.net_task.registered_agents[agent_id] = addr
-            logging.info(f"Registered agent {agent_id} at {addr}")
+            logging.info(f"Agent {agent_id} registered with address {addr}")
             ack = {"status": "registered", "agent_id": agent_id}
             self.net_task.send_message(ack, addr)
 
@@ -126,7 +126,7 @@ class NMS_Server:
 
     def send_task_to_agents(self):
         if not self.task_config:
-            logging.error("Task configuration not loaded. Cannot send tasks.")
+            logging.error("[ERROR] Failed to load Task configuration. Cannot send tasks.")
             return
 
         for agent_id, agent_address in self.net_task.registered_agents.items():
@@ -142,9 +142,9 @@ class NMS_Server:
                     "alertflow_conditions": vars(device.alertflow_conditions)
                 }
                 self.net_task.send_message(task_data, agent_address, agent_id=agent_id)
-                logging.info(f"Sent task to agent {agent_id} at {agent_address}")
+                logging.info(f"Sent task to agent {agent_id} with address {agent_address}")
             else:
-                logging.warning(f"No matching device found in task configuration for agent {agent_id}.")
+                logging.warning(f"[ERROR] No matching device found in task configuration for agent {agent_id}.")
 
 ############################################################################################################################################################################################
 
@@ -160,9 +160,9 @@ class NMS_Server:
             # Send acknowledgment for metrics
             ack = {"message": "metrics_ack", "agent_id": agent_id}
             self.net_task.send_message(ack, addr)
-            logging.info(f"Sent metrics acknowledgment to agent {agent_id}")
+            logging.info(f"Sent metrics ACK to agent {agent_id}")
         else:
-            logging.warning(f"Invalid metrics message: {message}")
+            logging.warning(f"[ERROR] Invalid metrics message: {message}")
 
 ############################################################################################################################################################################################
 
@@ -172,7 +172,7 @@ class NMS_Server:
         if agent_id and task_id:
             logging.info(f"Received ACK for task {task_id} from agent {agent_id}.")
         else:
-            logging.warning(f"Invalid task acknowledgment message: {message}")
+            logging.warning(f"[ERROR] Invalid task ACK message: {message}")
 
 ############################################################################################################################################################################################
 
@@ -214,9 +214,9 @@ class NMS_Server:
                 logging.info("Loaded TaskConfig.")
                 return task_config
             else:
-                logging.warning("Failed to load TaskConfig.")
+                logging.warning("[ERROR] Failed to load TaskConfig")
         except Exception as e:
-            logging.error(f"Error loading TaskConfig: {e}")
+            logging.error(f"[ERROR] Failed to load TaskConfig: {e}")
         return None
     
 ############################################################################################################################################################################################
@@ -228,5 +228,5 @@ if __name__ == "__main__":
     try:
         server.start()
     except KeyboardInterrupt:
-        logging.info("Shutting down server.")
+        logging.info("Shutting down server...")
         server.stop()
