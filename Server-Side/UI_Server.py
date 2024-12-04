@@ -164,9 +164,24 @@ class UIServer:
 
     def view_storage(self, stdscr):
         """
-        Displays stored metrics for a selected agent from the `metrics_storage` folder.
-        Includes a menu to choose between Agent 1 and Agent 2.
+        Displays stored metrics for agents dynamically identified in the `metrics_storage` folder.
         """
+
+        def get_agents():
+            """
+            Dynamically retrieves the list of agents based on the files in the `metrics_storage` folder.
+            """
+            storage_folder = "metrics_storage"
+            if not os.path.exists(storage_folder):
+                return []
+
+            agents = []
+            for file_name in os.listdir(storage_folder):
+                if file_name.startswith("agent") and file_name.endswith("_metrics_collected.json"):
+                    # Extract agent number from the file name
+                    agent_number = file_name.replace("agent", "").replace("_metrics_collected.json", "")
+                    agents.append(f"Agent {agent_number} Metrics")
+            return agents
 
         def load_metrics(agent_id):
             """
@@ -233,8 +248,15 @@ class UIServer:
                 elif key in (ord('\n'), ord('\r')):  # Enter
                     return options[current_index]
 
+        # Retrieve agent list dynamically
+        agents = get_agents()
+        if not agents:
+            content = ["No agents found in the metrics_storage folder."]
+            self.display_popup(stdscr, "Error", "\n".join(content))
+            return
+
         # Menu to select agent
-        agent_id = display_menu(stdscr, ["Agent 1 Metrics", "Agent 2 Metrics"], "Select Agent")
+        agent_id = display_menu(stdscr, agents, "Select Agent")
         if not agent_id:
             return
 
