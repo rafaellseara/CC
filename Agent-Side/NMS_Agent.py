@@ -68,7 +68,7 @@ class NMS_Agent:
         while True:
             try:
                 # Configura o timeout no socket para evitar bloqueio indefinido
-                self.udp_socket.settimeout(10)  # Ajuste o valor do timeout conforme necessário
+                self.udp_socket.settimeout(15)  # Ajuste o valor do timeout conforme necessário
                 
                 # Aguarda mensagens do servidor
                 data, server = self.udp_socket.recvfrom(1024)
@@ -170,7 +170,7 @@ class NMS_Agent:
         while retries < max_retries:
             try:
                 # Configura timeout para aguardar o ACK
-                self.udp_socket.settimeout(5)  
+                self.udp_socket.settimeout(15)  
                 ack_data, _ = self.udp_socket.recvfrom(1024)
                 
                 # Decodifica a mensagem recebida
@@ -246,7 +246,7 @@ class NMS_Agent:
         while retries < max_retries:
             try:
                 # Configura o timeout de 5 segundos para aguardar o ACK
-                self.tcp_socket.settimeout(5)  
+                self.tcp_socket.settimeout(15)  
                 
                 # Aguarda até 5 segundos por dados
                 ack_data = self.tcp_socket.recv(1024)
@@ -382,7 +382,7 @@ class NMS_Agent:
         task_thread.start()
 
 if __name__ == "__main__":
-    server_address = "172.24.234.106"
+    server_address = "10.0.0.10"
     udp_port = 5005
     tcp_port = 5070
     agent = NMS_Agent(server_address, udp_port, tcp_port)

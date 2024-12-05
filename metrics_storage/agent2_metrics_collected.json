@@ -706,5 +706,53 @@
                 "latency": 64.199
             }
         }
+    },
+    {
+        "cpu_usage": 0.0,
+        "ram_usage": 48.0,
+        "interface_stats": {
+            "eth1": {
+                "bytes_sent": 17006,
+                "bytes_recv": 22353,
+                "packets_sent": 173,
+                "packets_recv": 225,
+                "dropin": 0,
+                "dropout": 0
+            }
+        },
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "1.05 Mbits/sec",
+                "jitter": "0.270 ms",
+                "packet_loss": "0/ 892 (0%)"
+            },
+            "latency": {
+                "latency": 63.653
+            }
+        }
+    },
+    {
+        "cpu_usage": 2.1,
+        "ram_usage": 48.1,
+        "interface_stats": {
+            "eth1": {
+                "bytes_sent": 37784,
+                "bytes_recv": 43846,
+                "packets_sent": 407,
+                "packets_recv": 467,
+                "dropin": 0,
+                "dropout": 0
+            }
+        },
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "1.05 Mbits/sec",
+                "jitter": "0.032 ms",
+                "packet_loss": "0/ 892 (0%)"
+            },
+            "latency": {
+                "latency": 62.634
+            }
+        }
     }
 ]
