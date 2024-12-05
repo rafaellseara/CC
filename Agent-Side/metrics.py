@@ -162,6 +162,8 @@ class MetricCollector:
                 if output:
                     print("[DEBUG] Iperf server output captured.")
                     return self.parse_iperf_output(output)
+                if not output:
+                    print("[ERROR] No output from server found. Continuing...")
             except Exception as e:
                 print(f"[ERROR] Error capturing iperf server metrics: {e}")
             return {"status": "server_running"}
