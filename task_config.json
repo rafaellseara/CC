@@ -7,7 +7,7 @@
       "device_metrics": {
         "cpu_usage": true,
         "ram_usage": true,
-        "interface_stats": ["eth0", "eth1"]
+        "interface_stats": ["eth0"]
       },
       "link_metrics": {
         "bandwidth": {
@@ -29,7 +29,10 @@
       },
       "alertflow_conditions": {
         "cpu_usage": 80.0,
-        "ram_usage": 90.0
+        "ram_usage": 90.0,
+        "interface_stats": 2000, 
+        "packet_loss": 5.0,
+        "jitter": 100.0
       }
     },
     {
@@ -37,7 +40,7 @@
       "device_metrics": {
         "cpu_usage": true,
         "ram_usage": false,
-        "interface_stats": ["eth0", "eth2"]
+        "interface_stats": ["eth1"]
       },
       "link_metrics": {
         "bandwidth": {
@@ -59,7 +62,10 @@
       },
       "alertflow_conditions": {
         "cpu_usage": 75.0,
-        "ram_usage": 85.0
+        "ram_usage": 85.0,
+        "interface_stats": 2000,
+        "packet_loss": 5.0,
+        "jitter": 100.0
       }
     }
   ]
