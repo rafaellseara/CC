@@ -311,6 +311,65 @@ class NMS_Agent:
             })
             self.send_alert(alert_message)
 
+        # Check Interface Stats
+        interface_name = "eth0"
+
+        # Verifica se a interface está nas métricas coletadas
+        if interface_name in metrics["interface_stats"]:
+            packets_recv = metrics["interface_stats"][interface_name]["packets_recv"]
+            threshold = alert_conditions.get("packets_recv", float('inf'))
+
+            # Compara o valor com o limite definido
+            if packets_recv > threshold:
+                alert_message = json.dumps({
+                    "alert": "packets_recv",
+                    "value": packets_recv,
+                    "agent_id": self.agent_id,
+                    "threshold": threshold,
+                    "interface": interface_name
+                })
+                self.send_alert(alert_message)
+
+        # Check Packet Loss
+        if "packet_loss" in metrics:
+            try:
+                # Extraindo a percentagem de packet loss (remove parênteses e símbolo de '%')
+                packet_loss_percentage = float(metrics["packet_loss"].strip("()%"))
+                threshold = alert_conditions.get("packet_loss", float('inf'))
+
+                # Comparar com o limite definido
+                if packet_loss_percentage > threshold:
+                    alert_message = json.dumps({
+                        "alert": "packet_loss",
+                        "value": packet_loss_percentage,
+                        "agent_id": self.agent_id,
+                        "threshold": threshold
+                    })
+                    self.send_alert(alert_message)
+            except ValueError as e:
+                print(f"[ERROR] Failed to parse packet loss value: {metrics['packet_loss']}. Error: {e}")
+
+
+
+        # Check Jitter
+        if "jitter" in metrics:
+            try:
+                # Extrair o valor de jitter e remover a unidade "ms"
+                jitter_value = float(metrics["jitter"].split()[0])  # Pega apenas o número antes de "ms"
+                threshold = alert_conditions.get("jitter", float('inf'))
+
+                # Comparar com o limite definido
+                if jitter_value > threshold:
+                    alert_message = json.dumps({
+                        "alert": "jitter",
+                        "value": jitter_value,
+                        "agent_id": self.agent_id,
+                        "threshold": threshold
+                    })
+                    self.send_alert(alert_message)
+            except (ValueError, IndexError) as e:
+                print(f"[ERROR] Failed to parse jitter value: {metrics['jitter']}. Error: {e}")
+
 ############################################################################################################################################################################################
 
     def start(self):
@@ -323,7 +382,7 @@ class NMS_Agent:
         task_thread.start()
 
 if __name__ == "__main__":
-    server_address = "10.0.0.10"
+    server_address = "172.24.234.106"
     udp_port = 5005
     tcp_port = 5070
     agent = NMS_Agent(server_address, udp_port, tcp_port)
