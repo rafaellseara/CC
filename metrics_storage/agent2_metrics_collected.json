@@ -554,5 +554,25 @@
             "bandwidth": null,
             "latency": null
         }
+    },
+    {
+        "cpu_usage": 5.4,
+        "ram_usage": 56.8,
+        "interface_stats": {
+            "eth1": {
+                "bytes_sent": 14790,
+                "bytes_recv": 19324,
+                "packets_sent": 149,
+                "packets_recv": 195,
+                "dropin": 0,
+                "dropout": 0
+            }
+        },
+        "link_metrics": {
+            "bandwidth": null,
+            "latency": {
+                "latency": 63.962
+            }
+        }
     }
 ]

@@ -1,0 +1,42 @@
+[
+    {
+        "cpu_usage": 7.5,
+        "ram_usage": 56.8,
+        "interface_stats": {
+            "eth2": {
+                "bytes_sent": 13602,
+                "bytes_recv": 19066,
+                "packets_sent": 147,
+                "packets_recv": 193,
+                "dropin": 0,
+                "dropout": 0
+            }
+        },
+        "link_metrics": {
+            "bandwidth": null,
+            "latency": {
+                "latency": 21.163
+            }
+        }
+    },
+    {
+        "cpu_usage": 7.5,
+        "ram_usage": 56.8,
+        "interface_stats": {
+            "eth2": {
+                "bytes_sent": 13602,
+                "bytes_recv": 19066,
+                "packets_sent": 147,
+                "packets_recv": 193,
+                "dropin": 0,
+                "dropout": 0
+            }
+        },
+        "link_metrics": {
+            "bandwidth": null,
+            "latency": {
+                "latency": 21.163
+            }
+        }
+    }
+]

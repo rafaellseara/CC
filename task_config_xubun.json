@@ -14,7 +14,7 @@
           "enabled": true,
           "tool": "iperf",
           "role": "server",
-          "server_address": "10.0.7.10",
+          "server_address": "10.0.6.2",
           "duration": 10,
           "transport_type": "UDP",
           "frequency": 30
@@ -22,14 +22,17 @@
         "latency": {
           "enabled": true,
           "tool": "ping",
-          "destination": "10.0.1.10",
+          "destination": "10.0.5.1",
           "packet_count": 5,
           "frequency": 20
         }
       },
       "alertflow_conditions": {
         "cpu_usage": 80.0,
-        "ram_usage": 90.0
+        "ram_usage": 90.0,
+        "interface_stats": 2000, 
+        "packet_loss": 5.0,
+        "jitter": 100.0
       }
     },
     {
@@ -44,7 +47,7 @@
           "enabled": true,
           "tool": "iperf",
           "role": "client",
-          "server_address": "10.0.7.10",
+          "server_address": "10.0.6.2",
           "duration": 10,
           "transport_type": "UDP",
           "frequency": 30
@@ -52,14 +55,17 @@
         "latency": {
           "enabled": true,
           "tool": "ping",
-          "destination": "10.0.7.10",
+          "destination": "10.0.2.2",
           "packet_count": 5,
           "frequency": 20
         }
       },
       "alertflow_conditions": {
         "cpu_usage": 75.0,
-        "ram_usage": 85.0
+        "ram_usage": 85.0,
+        "interface_stats": 2000,
+        "packet_loss": 5.0,
+        "jitter": 100.0
       }
     },
     {
@@ -74,7 +80,7 @@
           "enabled": true,
           "tool": "iperf",
           "role": "client",
-          "server_address": "10.0.7.10",
+          "server_address": "10.0.4.2",
           "duration": 10,
           "transport_type": "UDP",
           "frequency": 30
@@ -82,14 +88,17 @@
         "latency": {
           "enabled": true,
           "tool": "ping",
-          "destination": "10.0.3.10",
+          "destination": "10.0.2.1",
           "packet_count": 5,
           "frequency": 20
         }
       },
       "alertflow_conditions": {
         "cpu_usage": 80.0,
-        "ram_usage": 90.0
+        "ram_usage": 90.0,
+        "interface_stats": 2000,
+        "packet_loss": 5.0,
+        "jitter": 100.0
       }
     }
   ]

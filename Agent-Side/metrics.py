@@ -151,24 +151,15 @@ class MetricCollector:
             print("[DEBUG] Waiting for client connection to generate metrics...")
             try:
                 output = ""
-                timeout = 10  # seconds
-                poller = select.poll()
-                poller.register(self._server_process.stdout, select.POLLIN)
-
-                # Wait for output or timeout
-                events = poller.poll(timeout * 1000)  # Timeout in milliseconds
-                if events:
-                    # Read server output until a client session ends
-                    while True:
-                        line = self._server_process.stdout.readline()
-                        if not line:  # End of output
-                            break
-                        output += line
-                        if "Server Report" in line or "bits/sec" in line:
-                            # Report generated, stop reading
-                            break
-                else:
-                    print("[WARNING] No client connected within timeout period.")
+                 # Read server output until a client session ends
+                while True:
+                    line = self._server_process.stdout.readline()
+                    if not line:  # End of output
+                        break
+                    output += line
+                    if "Server Report" in line or "bits/sec" in line:
+                        # Report generated, stop reading
+                        break
                 if output:
                     print("[DEBUG] Iperf server output captured.")
                     return self.parse_iperf_output(output)
