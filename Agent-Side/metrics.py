@@ -87,21 +87,23 @@ class MetricCollector:
 
             for line in lines:
                 # Parse bandwidth
-                if "bits/sec" in line:
+                if any(unit in line for unit in ["bits/sec", "Mbits/sec", "Gbits/sec"]):
                     parts = line.split()
-                    # Ensure the line contains the bandwidth value (e.g., "105 Mbits/sec")
-                    if "Mbits/sec" in parts or "Gbits/sec" in parts:
-                        bandwidth_index = parts.index("bits/sec") - 1
-                        parsed_data["bandwidth"] = parts[bandwidth_index] + " bits/sec"
-                        print(f"[DEBUG] Parsed Bandwidth: {parsed_data['bandwidth']}")
+                    # Look for bandwidth value dynamically
+                    for idx, part in enumerate(parts):
+                        if part in ["bits/sec", "Mbits/sec", "Gbits/sec"]:
+                            bandwidth_value = parts[idx - 1]  # Value before the unit
+                            parsed_data["bandwidth"] = bandwidth_value + " " + part
+                            print(f"[DEBUG] Parsed Bandwidth: {parsed_data['bandwidth']}")
+                            break
 
                 # Parse jitter and packet loss for UDP transport
                 if "ms" in line and "/" in line:
                     parts = line.split()
                     # Ensure there are enough parts to parse the line correctly
                     if len(parts) >= 8:
-                        parsed_data["jitter"] = parts[-4] + " " + parts[-3]  # Jitter (e.g., "0.007 ms")
-                        parsed_data["packet_loss"] = parts[-2] + " " + parts[-1]  # Packet loss (e.g., "0/895 (0%)")
+                        parsed_data["jitter"] = parts[-5] + " " + parts[-4]  # Jitter (e.g., "0.007 ms")
+                        parsed_data["packet_loss"] = parts[-3] + " " + parts[-2] + " " + parts[-1]  # Packet loss (e.g., "0/895 (0%)")
                         print(f"[DEBUG] Parsed Jitter: {parsed_data['jitter']}, Packet Loss: {parsed_data['packet_loss']}")
 
             if any(value for value in parsed_data.values()):
@@ -112,7 +114,6 @@ class MetricCollector:
         except Exception as e:
             print(f"[ERROR] Error parsing iperf output: {e}")
             return None
-
 
     def parse_ping_output(self, output):
         try:
@@ -150,8 +151,8 @@ class MetricCollector:
             # Wait for a client to connect and generate a report
             print("[DEBUG] Waiting for client connection to generate metrics...")
             try:
+                # Continuously read server output until a client session ends
                 output = ""
-                 # Read server output until a client session ends
                 while True:
                     line = self._server_process.stdout.readline()
                     if not line:  # End of output

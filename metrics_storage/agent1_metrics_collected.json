@@ -542,5 +542,137 @@
                 "latency": 43.117
             }
         }
+    },
+    {
+        "cpu_usage": 3.4,
+        "ram_usage": 47.0,
+        "interface_stats": {
+            "eth0": {
+                "bytes_sent": 17274,
+                "bytes_recv": 23708,
+                "packets_sent": 189,
+                "packets_recv": 242,
+                "dropin": 0,
+                "dropout": 0
+            }
+        },
+        "link_metrics": {
+            "bandwidth": null,
+            "latency": {
+                "latency": 42.314
+            }
+        }
+    },
+    {
+        "cpu_usage": 2.2,
+        "ram_usage": 47.0,
+        "interface_stats": {
+            "eth0": {
+                "bytes_sent": 43826,
+                "bytes_recv": 1373578,
+                "packets_sent": 407,
+                "packets_recv": 1330,
+                "dropin": 0,
+                "dropout": 0
+            }
+        },
+        "link_metrics": {
+            "bandwidth": null,
+            "latency": {
+                "latency": 42.888
+            }
+        }
+    },
+    {
+        "cpu_usage": 2.2,
+        "ram_usage": 47.0,
+        "interface_stats": {
+            "eth0": {
+                "bytes_sent": 50038,
+                "bytes_recv": 1379930,
+                "packets_sent": 481,
+                "packets_recv": 1406,
+                "dropin": 0,
+                "dropout": 0
+            }
+        },
+        "link_metrics": {
+            "bandwidth": null,
+            "latency": {
+                "latency": 43.121
+            }
+        }
+    },
+    {
+        "cpu_usage": 1.1,
+        "ram_usage": 47.1,
+        "interface_stats": {
+            "eth0": {
+                "bytes_sent": 94762,
+                "bytes_recv": 2756288,
+                "packets_sent": 907,
+                "packets_recv": 2705,
+                "dropin": 0,
+                "dropout": 0
+            }
+        },
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "1.05 Mbits/sec",
+                "jitter": "ms 0/",
+                "packet_loss": "892 (0%)"
+            },
+            "latency": {
+                "latency": 42.969
+            }
+        }
+    },
+    {
+        "cpu_usage": 3.3,
+        "ram_usage": 47.2,
+        "interface_stats": {
+            "eth0": {
+                "bytes_sent": 151592,
+                "bytes_recv": 4141667,
+                "packets_sent": 1470,
+                "packets_recv": 4135,
+                "dropin": 0,
+                "dropout": 0
+            }
+        },
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "1.05 Mbits/sec",
+                "jitter": null,
+                "packet_loss": null
+            },
+            "latency": {
+                "latency": 43.657
+            }
+        }
+    },
+    {
+        "cpu_usage": 2.2,
+        "ram_usage": 47.3,
+        "interface_stats": {
+            "eth0": {
+                "bytes_sent": 173578,
+                "bytes_recv": 5488049,
+                "packets_sent": 1635,
+                "packets_recv": 5166,
+                "dropin": 0,
+                "dropout": 0
+            }
+        },
+        "link_metrics": {
+            "bandwidth": {
+                "bandwidth": "1.05 Mbits/sec",
+                "jitter": "0.222 ms",
+                "packet_loss": "0/ 892 (0%)"
+            },
+            "latency": {
+                "latency": 42.855
+            }
+        }
     }
 ]
