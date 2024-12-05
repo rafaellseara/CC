@@ -204,23 +204,40 @@ class UIServer:
 
         def format_metrics(metrics, indent=0):
             """
-            Recursively formats metrics for better readability.
+            Recursively formats metrics for better readability with separators and spacing.
             """
             formatted = []
-            for entry in metrics:
+            separator = "=" * 50  # Separator for clarity
+            for i, entry in enumerate(metrics):
+                formatted.append(separator)
+                formatted.append(f"Entry {i + 1}:")
                 if isinstance(entry, dict):
-                    for key, value in entry.items():
-                        formatted.append(" " * indent + f"{key}:")
-                        if isinstance(value, dict):
-                            formatted.extend(format_metrics([value], indent + 4))
-                        elif isinstance(value, list):
-                            for item in value:
-                                formatted.append(" " * (indent + 4) + str(item))
-                        else:
-                            formatted.append(" " * (indent + 4) + str(value))
+                    formatted.extend(format_dict(entry, indent + 4))
                 else:
                     formatted.append(" " * indent + str(entry))
+                formatted.append(separator)
             return formatted
+
+
+        def format_dict(data, indent=0):
+            """
+            Helper function to format dictionaries recursively.
+            """
+            formatted = []
+            for key, value in data.items():
+                formatted.append(" " * indent + f"{key}:")
+                if isinstance(value, dict):
+                    formatted.extend(format_dict(value, indent + 4))
+                elif isinstance(value, list):
+                    for item in value:
+                        if isinstance(item, dict):
+                            formatted.extend(format_dict(item, indent + 4))
+                        else:
+                            formatted.append(" " * (indent + 4) + str(item))
+                else:
+                    formatted.append(" " * (indent + 4) + str(value))
+            return formatted
+
 
         def display_menu(stdscr, options, title="Select an Option"):
             """
