@@ -5,7 +5,7 @@ import json
 
 class UIServer:
     def __init__(self, server_from_NMS):
-        self.server = server_from_NMS  # Reference to the NMS_Server instance
+        self.server = server_from_NMS 
 
     def run_curses_ui(self, stdscr):
         curses.curs_set(1)

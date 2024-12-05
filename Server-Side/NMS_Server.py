@@ -42,7 +42,7 @@ class NMS_Server:
                 s.connect(("1.1.1.1", 53))
                 local_ip_address = s.getsockname()[0]
             except Exception as e:
-                print(f"[ERROR] Could not determine local IP: {e}")
+                logging.error(f"Could not determine local IP: {e}")
                 local_ip_address = None
             return local_ip_address
 
