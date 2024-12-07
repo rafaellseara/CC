@@ -25,12 +25,7 @@ class AlertFlow:
         try:
             data = conn.recv(1024)
             alert = json.loads(data.decode())
-            self.logger.info(f"Received alert from {addr}: {alert}")
-
-            # Optionally, send an acknowledgment back
-            ack_message = {"status": "ack", "alert_received": True}
-            conn.sendall(json.dumps(ack_message).encode())
-            self.logger.info(f"Sent ACK to {addr}")
+            self.logger.error(f"Received alert from {addr}: {alert}")
         except Exception as e:
             self.logger.error(f"Failed while handling connection from {addr}: {e}")
         finally:

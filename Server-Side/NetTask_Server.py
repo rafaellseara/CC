@@ -16,14 +16,23 @@ class NetTask:
 
         self.registered_agents = {}
 
-    def receive_message(self):
+    def receive_message(self, timeout=None):
         """
-        Receives a message over UDP.
+        Receives a message over UDP with optional timeout.
+        
+        :param timeout: Timeout in seconds (None means no timeout).
+        :return: message and address if received, otherwise (None, None).
         """
         try:
+            if timeout is not None:
+                self.udp_socket.settimeout(timeout)  # Set timeout for receiving the message
+
             data, addr = self.udp_socket.recvfrom(1024)
             message = json.loads(data.decode())
             return message, addr
+        except socket.timeout:
+            self.logger.warning(f"Timeout reached while waiting for a message.")
+            return None, None
         except Exception as e:
             self.logger.error(f"Failed to receive UDP message: {e}")
             return None, None

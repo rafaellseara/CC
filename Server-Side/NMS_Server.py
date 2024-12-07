@@ -78,7 +78,7 @@ class NMS_Server:
                 logging.error("Failed to load Task configuration")
 
         # Start AlertFlow in a separate thread
-        Thread(target=self.alert_flow.start, daemon=True).start()
+        #Thread(target=self.alert_flow.start, daemon=True).start()
 
         # Main loop for UDP (NetTask) communication
         while True:
@@ -136,11 +136,56 @@ class NMS_Server:
 
 ############################################################################################################################################################################################
 
-    def send_task_to_agents(self):
+    def send_task_to_agents(self, max_retries=3, wait_time=5):
+        """
+        Sends tasks to registered agents in parallel threads.
+        Each thread waits for acknowledgment (ACK) and handles retransmissions.
+        """
         if not self.task_config:
             logging.error("Failed to load Task configuration. Cannot send tasks.")
             return
 
+        # Create the dedicated ACK socket
+        ack_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        ack_port = self.net_task.udp_port + 1  # Use a port offset for ACK
+        ack_socket.bind((self.net_task.host, ack_port))
+        ack_socket.settimeout(wait_time)
+        logging.info(f"ACK socket created and listening on port {ack_port}")
+
+        def send_task_to_agent(agent_id, agent_address, task_data):
+            retries = 0
+            ack_received = False
+
+            while retries < max_retries and not ack_received:
+                # Send the task to the agent´
+                ack_socket.sendto(json.dumps(task_data).encode(),agent_address)
+                #self.net_task.send_message(task_data, agent_address, agent_id=agent_id)
+                logging.info(f"Sent task to agent {agent_id} with address {agent_address} (Attempt {retries + 1})")
+
+                try:
+                    # Wait for a response for a fixed amount of time
+                    data, addr = ack_socket.recvfrom(1024)
+                    message = json.loads(data.decode())
+
+                    # Check if the message is an ACK
+                    if message.get("message") == "task_ack" and message.get("task_id") == task_data["task_id"]:
+                        logging.info(f"Received ACK for task {task_data['task_id']} from agent {agent_id}.")
+                        ack_received = True
+                        break
+                    else:
+                        logging.warning(f"Received unexpected message: {message} from agent {agent_id}. Retrying...")
+                except socket.timeout:
+                    logging.warning(f"No ACK received from agent {agent_id} for task {task_data['task_id']}. Retrying...")
+                    retries += 1
+                except Exception as e:
+                    logging.error(f"Error while waiting for ACK: {e}")
+                    retries += 1
+
+            if not ack_received:
+                logging.error(f"Failed to receive ACK from agent {agent_id} after {max_retries} retries.")
+
+        # Prepare task data for each agent
+        threads = []
         for agent_id, agent_address in self.net_task.registered_agents.items():
             # Find the matching device in the task configuration
             device = next((d for d in self.task_config.devices if d.device_id == agent_id), None)
@@ -151,12 +196,22 @@ class NMS_Server:
                     "device_id": device.device_id,
                     "device_metrics": vars(device.device_metrics),
                     "link_metrics": vars(device.link_metrics),
-                    "alertflow_conditions": vars(device.alertflow_conditions)
+                    "alertflow_conditions": vars(device.alertflow_conditions),
                 }
-                self.net_task.send_message(task_data, agent_address, agent_id=agent_id)
-                logging.info(f"Sent task to agent {agent_id} with address {agent_address}")
+                # Start a thread to handle task transmission for each agent
+                thread = threading.Thread(target=send_task_to_agent, args=(agent_id, agent_address, task_data), daemon=True)
+                thread.start()
+                threads.append(thread)
             else:
                 logging.warning(f"No matching device found in task configuration for agent {agent_id}.")
+
+        # Wait for all threads to finish
+        for thread in threads:
+            thread.join()
+
+        # Close the ACK socket after all tasks are processed
+        ack_socket.close()
+        logging.info("ACK socket closed.")
 
 ############################################################################################################################################################################################
 

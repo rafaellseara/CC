@@ -76,7 +76,7 @@ class NMS_Agent:
                 print(f"Received task: {task}")
 
                 # Envia um ACK para o servidor
-                self.send_task_ack(task.get("task_id"))
+                self.send_task_ack(task.get("task_id"), server)
 
                 # Inicia a coleta de métricas com base na tarefa
                 self.collect_metrics(task)
@@ -96,7 +96,7 @@ class NMS_Agent:
 
 ############################################################################################################################################################################################
 
-    def send_task_ack(self, task_id):
+    def send_task_ack(self, task_id, address):
         if not task_id:
             print("[ERROR] No task ID found to send ACK.")
             return
@@ -106,7 +106,7 @@ class NMS_Agent:
             "task_id": task_id,
             "agent_id": self.agent_id
         }
-        self.udp_socket.sendto(json.dumps(ack_message).encode(), (self.server_address, self.udp_port))
+        self.udp_socket.sendto(json.dumps(ack_message).encode(), address)
         print(f"Sent ACK for task_id {task_id} to server.")
 
 ############################################################################################################################################################################################
@@ -205,87 +205,24 @@ class NMS_Agent:
         Sends an alert message to the server, with retransmission and ACK handling.
         
         Args:
-            alert_message (str): The alert message to send.
-            max_retries (int): Maximum number of retransmission attempts if no ACK is received.
+        alert_message (str): The alert message to send.
+        max_retries (int): Maximum number of retransmission attempts if no ACK is received.
         """
-        retries = 0
-        while retries < max_retries:
-            try:
-                # Cria o socket TCP
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp_socket:
-                    # Conecta ao servidor
-                    tcp_socket.connect((self.server_address, self.tcp_port))
-                    print(f"Connected to server at {self.server_address}:{self.tcp_port}")
+        try:
+            # Cria o socket TCP
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp_socket:
+                # Conecta ao servidor
+                tcp_socket.connect((self.server_address, self.tcp_port))
+                print(f"Connected to server at {self.server_address}:{self.tcp_port}")
 
-                    # Prepara o alerta como um dicionário e converte para JSON
-                    alert_data = {"alert": alert_message}
-                    tcp_socket.sendall(json.dumps(alert_data).encode())
-                    print(f"Sent alert to server: {alert_message}")
+                # Prepara o alerta como um dicionário e converte para JSON
+                alert_data = {"alert": alert_message}
+                tcp_socket.sendall(json.dumps(alert_data).encode())
+                print(f"Sent alert to server: {alert_message}")
 
-                    # Espera pelo ACK do servidor
-                    if self.wait_for_ack_tcp():
-                        print(f"Alert ACK received successfully from server.")
-                        return  # Se o ACK for recebido, sai da função
-                    else:
-                        print(f"[ERROR] Alert ACK not received from server (attempt {retries + 1}). Retrying...")
-
-            except Exception as e:
-                print(f"[ERROR] Failed to send alert (attempt {retries + 1}): {e}")
+        except Exception as e:
+            print(f"[ERROR] Failed to send alert (attempt {retries + 1}): {e}")
             
-            retries += 1  # Incrementa o contador de tentativas
-
-        # Se o número máximo de tentativas for atingido
-        print(f"[ERROR] Failed to send alert after {max_retries} attempts. Giving up.")
-
-
-
-############################################################################################################################################################################################
-
-    def wait_for_ack_tcp(self, max_retries=3):
-        retries = 0
-        while retries < max_retries:
-            try:
-                # Configura o timeout de 5 segundos para aguardar o ACK
-                self.tcp_socket.settimeout(15)  
-                
-                # Aguarda até 5 segundos por dados
-                ack_data = self.tcp_socket.recv(1024)
-
-                # Se não receber dados após 5 segundos, tentamos novamente
-                if not ack_data:
-                    logging.error(f"No data received. Retry {retries + 1}/{max_retries}")
-                    retries += 1
-                    continue
-
-                # Decodifica a mensagem recebida
-                ack_message = json.loads(ack_data.decode())
-
-                # Verifica se o ACK é válido
-                if ack_message.get("status") == "ack" and ack_message.get("alert_received"):
-                    logging.info(f"Received valid ACK: {ack_message}")
-                    return True
-                else:
-                    logging.warning(f"Unexpected ACK content: {ack_message}")
-                    retries += 1
-
-            except json.JSONDecodeError:
-                # Caso a mensagem seja malformada
-                logging.error("Received malformed ACK. Failed to parse JSON.")
-                retries += 1
-            except socket.timeout:
-                # Timeout específico, não incrementa retries até a próxima tentativa
-                logging.error(f"No ACK received after waiting for 5 seconds. Retry {retries + 1}/{max_retries}")
-                retries += 1
-            except socket.error as e:
-                # Se ocorrer erro no socket (desconexão, etc.)
-                logging.error(f"Socket error: {e}. Retry {retries + 1}/{max_retries}")
-                retries += 1
-
-        # Se todas as tentativas falharem
-        logging.error("Failed to receive ACK after maximum retries.")
-        return False
-
-
 ############################################################################################################################################################################################
 
     def check_alerts(self, metrics, task):
