@@ -24,31 +24,39 @@ class NMS_Agent:
 
 ############################################################################################################################################################################################
 
-    def register(self, max_retries=3, timeout=5):
-        register_message = {
-            "message": "register",
-        }
-        
+    def register_with_server(self, max_retries=3, timeout=5):
+        """
+        Handles the registration process with the server.
+        Sends an ACK after receiving the agent_id.
+        Retries if no response is received within the timeout.
+        """
+        register_message = {"message": "register"}
+
         for attempt in range(1, max_retries + 1):
             try:
-                # Envia o pedido de registo
+                # Send the registration request
                 self.udp_socket.sendto(json.dumps(register_message).encode(), (self.server_address, self.udp_port))
                 print(f"Attempt {attempt}: Sent registration request to server at {self.server_address}")
 
-                # Configura o timeout para esperar pela resposta
+                # Set the timeout for waiting for a response
                 self.udp_socket.settimeout(timeout)
 
-                # Aguarda a resposta do servidor
-                data, server = self.udp_socket.recvfrom(1024)
-                response = json.loads(data.decode())
+                # Wait for a response from the server
+                response, addr = self.udp_socket.recvfrom(1024)
+                response_message = json.loads(response.decode())
 
-                # Verifica se o registo foi bem-sucedido
-                if response.get("status") == "registered":
-                    self.agent_id = response.get("agent_id")
+                # Check if registration was successful
+                if response_message.get("status") == "registered":
+                    self.agent_id = response_message.get("agent_id")
                     print(f"Agent {self.agent_id} successfully registered")
-                    return True  # Registo concluído com sucesso
+
+                    # Send ACK back to the server
+                    ack_message = {"message": "registration_ack", "agent_id": self.agent_id}
+                    self.udp_socket.sendto(json.dumps(ack_message).encode(), addr)
+                    print(f"Sent ACK for registration to server.")
+                    return True
                 else:
-                    print(f"[ERROR] Attempt {attempt}: Unexpected response: {response}")
+                    print(f"[ERROR] Attempt {attempt}: Unexpected response: {response_message}")
                     return False
 
             except socket.timeout:
@@ -57,7 +65,7 @@ class NMS_Agent:
             except Exception as e:
                 print(f"[ERROR] Attempt {attempt}: Error during registration: {e}")
 
-        # Após atingir o limite de tentativas
+        # After exhausting all retries
         print("[ERROR] Failed to register agent after maximum retries.")
         return False
     
@@ -67,31 +75,33 @@ class NMS_Agent:
         print(f"Listening for tasks from {self.server_address}")
         while True:
             try:
-                # Configura o timeout no socket para evitar bloqueio indefinido
-                self.udp_socket.settimeout(15)  # Ajuste o valor do timeout conforme necessário
-                
-                # Aguarda mensagens do servidor
+                # Set timeout to avoid indefinite blocking
+                self.udp_socket.settimeout(15)
+
+                # Wait for messages from the server
                 data, server = self.udp_socket.recvfrom(1024)
-                task = json.loads(data.decode())
-                print(f"Received task: {task}")
+                message = json.loads(data.decode())
 
-                # Envia um ACK para o servidor
-                self.send_task_ack(task.get("task_id"), server)
+                # Ignore messages that are not tasks
+                if "task_id" not in message:
+                    print(f"[INFO] Received non-task message: {message}. Ignoring.")
+                    continue
 
-                # Inicia a coleta de métricas com base na tarefa
-                self.collect_metrics(task)
+                print(f"Received task: {message}")
+
+                # Send an ACK to the server
+                self.send_task_ack(message.get("task_id"), server)
+
+                # Start collecting metrics based on the task
+                self.collect_metrics(message)
 
             except socket.timeout:
-                # Timeout enquanto aguardava por mensagens, continua ouvindo
                 print("No task received within timeout period, continuing to listen...")
-
             except json.JSONDecodeError:
-                # Tratamento para mensagens malformadas
-                print("[ERROR] Received malformed task. Ignoring and continuing to listen.")
-
+                print("[ERROR] Received malformed message. Ignoring and continuing to listen.")
             except Exception as e:
-                # Tratamento de quaisquer outras exceções
                 print(f"[ERROR] Error in receive_task: {e}")
+
 
 
 ############################################################################################################################################################################################
@@ -310,7 +320,7 @@ class NMS_Agent:
 ############################################################################################################################################################################################
 
     def start(self):
-        if not self.register():
+        if not self.register_with_server():
             logging.error("Agent registration failed. Terminating program.")
             sys.exit(1)  # Código de saída 1 indica erro
 

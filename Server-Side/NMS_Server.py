@@ -126,13 +126,67 @@ class NMS_Server:
 
 ############################################################################################################################################################################################
 
-    def register_agent(self, message, addr):
+    def register_agent(self, message, addr, max_retries=3, wait_time=5):
+        """
+        Registers an agent and waits for acknowledgment (ACK).
+        Cancels registration if no ACK is received within the timeout.
+        Ignores subsequent registration packets from the same agent.
+        """
         with self.timer_lock:
+            # Check if the agent is already registered
+            for agent_id, agent_addr in self.net_task.registered_agents.items():
+                if agent_addr == addr:
+                    logging.info(f"Agent already registered with ID {agent_id} at {addr}. Ignoring subsequent registration.")
+                    return  # Ignore the registration packet
+
+            # Assign a new agent ID
             agent_id = str(len(self.net_task.registered_agents) + 1)
             self.net_task.registered_agents[agent_id] = addr
-            logging.info(f"Agent {agent_id} registered with address {addr}")
-            ack = {"status": "registered", "agent_id": agent_id}
-            self.net_task.send_message(ack, addr)
+
+            # Create a dedicated ACK socket
+            ack_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            ack_port = self.net_task.udp_port + 2  # Use a different port offset for ACK
+            ack_socket.bind((self.net_task.host, ack_port))
+            ack_socket.settimeout(wait_time)
+            logging.info(f"Dedicated ACK socket created for registration, listening on port {ack_port}")
+
+            # Send registration message and wait for ACK
+            ack_received = False
+            for attempt in range(max_retries):
+                registration_message = {"status": "registered", "agent_id": agent_id}
+                try:
+                    ack_socket.sendto(json.dumps(registration_message).encode(), addr)
+                    logging.info(f"Sent registration message to agent {agent_id} at {addr} (Attempt {attempt + 1})")
+
+                    # Wait for ACK
+                    try:
+                        data, recv_addr = ack_socket.recvfrom(1024)
+                        ack_message = json.loads(data.decode())
+
+                        if (
+                            ack_message.get("message") == "registration_ack" and
+                            ack_message.get("agent_id") == agent_id and
+                            recv_addr == addr
+                        ):
+                            logging.info(f"Received ACK from agent {agent_id}. Registration confirmed.")
+                            ack_received = True
+                            break
+                        else:
+                            logging.warning(f"Unexpected ACK message: {ack_message} or address mismatch.")
+                    except socket.timeout:
+                        logging.warning(f"No ACK received from agent {agent_id}. Retrying...")
+                except Exception as e:
+                    logging.error(f"Error while sending registration message or waiting for ACK: {e}")
+
+            # Handle failed registration
+            if not ack_received:
+                logging.error(f"Failed to receive ACK from agent {agent_id}. Canceling registration.")
+                del self.net_task.registered_agents[agent_id]
+
+            # Close the ACK socket
+            ack_socket.close()
+            logging.info(f"Dedicated ACK socket for registration closed.")
+
 
 ############################################################################################################################################################################################
 
